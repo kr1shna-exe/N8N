@@ -1,9 +1,9 @@
+import { Request, Response } from "express";
+import prisma from "../../../packages/db";
 import {
   credentialsSchema,
   credentialsUpdateSchema,
 } from "../../../packages/exports";
-import { Request, Response } from "express";
-import prisma from "../../../packages/db";
 
 export interface AuthRequest extends Request {
   user?: {
@@ -19,13 +19,16 @@ export const postCredentials = async (req: AuthRequest, res: Response) => {
       .status(400)
       .json({ message: "Zod validation failed.Enter the correct credentials" });
   }
+  if (!req.user?.id) {
+    return res.status(401).json({ message: "User not authenticated" });
+  }
   const data = response.data;
   const newCredentials = await prisma.credentials.create({
     data: {
       title: data.title,
       platform: data.platform,
       data: data.data,
-      userId: req.user?.id,
+      userId: req.user.id,
     },
   });
   return res.json({
@@ -35,7 +38,10 @@ export const postCredentials = async (req: AuthRequest, res: Response) => {
 };
 
 export const getCredentials = async (req: AuthRequest, res: Response) => {
-  const userId = req.user!.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ message: "User not authenticated" });
+  }
   const credentials = await prisma.credentials.findMany({
     where: {
       userId,
@@ -45,7 +51,10 @@ export const getCredentials = async (req: AuthRequest, res: Response) => {
 };
 
 export const deleteCredentials = async (req: AuthRequest, res: Response) => {
-  const userId = req.user!.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ message: "User not authenticated" });
+  }
   const { credentialId } = req.params;
   const deleteCredentials = await prisma.credentials.delete({
     where: {
@@ -60,7 +69,10 @@ export const deleteCredentials = async (req: AuthRequest, res: Response) => {
 };
 
 export const updateCredentials = async (req: AuthRequest, res: Response) => {
-  const userId = req.user!.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ message: "User not authenticated" });
+  }
   const { credentialId } = req.params;
   const response = credentialsUpdateSchema.safeParse(req.body);
   if (!response.success) {

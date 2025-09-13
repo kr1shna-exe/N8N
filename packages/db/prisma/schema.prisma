@@ -73,7 +73,7 @@ model Execution {
 
 enum Platform {
   Telegram
-  ResendMail
+  ResendEmail
 }
 
 enum TriggerType {

@@ -1,8 +1,9 @@
-import type { Response, Request } from "express";
-import { SignupSchema, SigninSchema } from "../../../packages/exports";
 import bcrypt from "bcrypt";
-import prisma from "../../../packages/db";
+import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import prisma from "../../../packages/db";
+import { SigninSchema, SignupSchema } from "../../../packages/exports";
+import { AuthRequest } from "./credentials";
 
 export const JWT_SECRET = process.env.JWT_SECRET || "123";
 
@@ -57,7 +58,7 @@ export const signin = async (req: Request, res: Response) => {
   }
   const password_check = await bcrypt.compare(
     user.password,
-    existingUser.password,
+    existingUser.password
   );
   if (!password_check) {
     return res.status(400).json({
@@ -69,4 +70,43 @@ export const signin = async (req: Request, res: Response) => {
   });
   res.cookie("access_token", token, { httpOnly: true });
   return res.json({ id: existingUser.id, token, email: existingUser.email });
+};
+
+export const verify = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user!;
+
+    res.status(200).json({
+      success: true,
+      message: "Token valid",
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+export const signout = async (req: Request, res: Response) => {
+  try {
+    // Clear the HTTP-only cookie
+    res.clearCookie("access_token");
+
+    res.status(200).json({
+      success: true,
+      message: "Signed out successfully",
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
 };

@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { Platform } from "../../db";
+import { Platform } from "../../db/types";
 
 const nodeSchema = z.object({
   title: z.string().min(2, "Title must be atleast 2 characters long"),

@@ -1,5 +1,5 @@
-import { Platform } from "../../db";
 import * as z from "zod";
+import { Platform } from "../../db/types";
 
 const resendSchema = z.object({
   title: z.string().min(2, "Platform title must have atleast 2 characters"),

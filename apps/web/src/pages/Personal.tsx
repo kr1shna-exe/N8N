@@ -4,21 +4,87 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkflowCards } from "@/components/workflow-cards";
 import { WorkflowTabs } from "@/components/workflow-tabs";
+import { toast } from "@/hooks/use-toast";
+import {
+  credentialsApi,
+  mapFromBackendCredential,
+  mapToBackendCredential,
+} from "@/lib/credentials";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const Personal = () => {
   const [activeTab, setActiveTab] = useState("workflows");
   const [showAddCredential, setShowAddCredential] = useState(false);
   const [credentials, setCredentials] = useState<any[]>([]);
   const [showAddButton, setShowAddButton] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSaveCredential = (credential: any) => {
-    setCredentials([...credentials, credential]);
+  // Load credentials when switching to credentials tab
+  useEffect(() => {
+    if (activeTab === "credentials") {
+      loadCredentials();
+    }
+  }, [activeTab]);
+
+  const loadCredentials = async () => {
+    try {
+      setLoading(true);
+      const response = await credentialsApi.getCredentials();
+      const frontendCredentials = response.credentials.map(
+        mapFromBackendCredential
+      );
+      setCredentials(frontendCredentials);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load credentials",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteCredential = (id: string) => {
-    setCredentials(credentials.filter((cred) => cred.id !== id));
+  const handleSaveCredential = async (credentialData: any) => {
+    try {
+      const backendCredential = mapToBackendCredential(credentialData);
+      const response =
+        await credentialsApi.createCredentials(backendCredential);
+      const frontendCredential = mapFromBackendCredential(
+        response.newCredentials
+      );
+      setCredentials([...credentials, frontendCredential]);
+
+      toast({
+        title: "Success",
+        description: "Credential created successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create credential",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteCredential = async (id: string) => {
+    try {
+      await credentialsApi.deleteCredentials(id);
+      setCredentials(credentials.filter((cred) => cred.id !== id));
+
+      toast({
+        title: "Success",
+        description: "Credential deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete credential",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -58,7 +124,11 @@ const Personal = () => {
           onMouseEnter={() => setShowAddButton(true)}
           onMouseLeave={() => setShowAddButton(false)}
         >
-          {credentials.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading credentials...</p>
+            </div>
+          ) : credentials.length === 0 ? (
             <div className="text-center py-12">
               <h3 className="text-lg font-medium text-foreground mb-2">
                 No credentials yet
