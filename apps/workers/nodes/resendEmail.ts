@@ -5,7 +5,7 @@ import prisma from "../../../packages/db";
 export default async function sendEmail(
   template: any,
   credentialId: string,
-  prevContext: any,
+  Context: any,
 ) {
   try {
     const credentials = await prisma.credentials.findMany({
@@ -19,9 +19,9 @@ export default async function sendEmail(
       throw new Error("Email api key was not found");
     }
     const resend = new Resend(data.apiKey);
-    const to = Mustache.render(template.to, prevContext);
-    const subject = Mustache.render(template.subject, prevContext);
-    const body = Mustache.render(template.body, prevContext);
+    const to = Mustache.render(template.to, Context);
+    const subject = Mustache.render(template.subject, Context);
+    const body = Mustache.render(template.body, Context);
 
     await resend.emails.send({
       from: "onboarding@resend.dev",

@@ -30,7 +30,7 @@ export const authApi = {
         `Validation failed: ${validateRequest.error.issues.map((e) => e.message).join(", ")}`
       );
     }
-
+    console.log("Ateempting from submit form");
     const response = await fetch(`${API_URL}/user/signup`, {
       method: "POST",
       headers: {
