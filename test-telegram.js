@@ -6,7 +6,7 @@ async function testTelegram() {
 
     const result = await sendTelegramMessage(
       { message: "Hello from test! This is {{name}} at {{time}}" },
-      "7a05136d-f560-4c57-a00b-774263ed3295",
+      "cred_id",
       {
         name: "Test User",
         time: new Date().toLocaleTimeString(),

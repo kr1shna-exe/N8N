@@ -10,7 +10,7 @@ async function testEmail() {
         subject: "Test from workflow",
         body: "<p>Hello {{name}}, sent at {{time}}</p>",
       },
-      "1e6addc8-9f6f-49d0-9d0e-ece71cc4ee7a",
+      "cred_id",
       {
         name: "Test User",
         time: new Date().toLocaleTimeString(),
