@@ -21,6 +21,7 @@ interface AddCredentialDialogProps {
 
 const services = [
   { id: "telegram", name: "Telegram", api: "Telegram API", icon: "📱" },
+  { id: "email", name: "Email", api: "Email Service", icon: "📧" }, // Add Email service
   { id: "slack", name: "Slack", api: "Slack API", icon: "💬" },
   { id: "github", name: "GitHub", api: "GitHub API", icon: "🐙" },
   { id: "google", name: "Google", api: "Google API", icon: "🔍" },
@@ -56,7 +57,9 @@ export function AddCredentialDialog({
       baseUrl:
         service.id === "telegram"
           ? "https://api.telegram.org"
-          : `https://api.${service.id}.com`,
+          : service.id === "email" || service.id === "resend"
+            ? "https://api.resend.com"
+            : `https://api.${service.id}.com`,
     });
     setStep("configure");
   };
@@ -108,28 +111,41 @@ export function AddCredentialDialog({
               </div>
 
               <div className="grid gap-2 max-h-60 overflow-y-auto">
-                {filteredServices.map((service) => (
-                  <Button
-                    key={service.id}
-                    variant="ghost"
-                    className="flex items-center justify-start gap-3 h-auto p-3"
-                    onClick={() => handleServiceSelect(service)}
-                  >
-                    <span className="text-lg">{service.icon}</span>
-                    <div className="text-left">
-                      <div className="font-medium">{service.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {service.api}
+                {filteredServices.length > 0 ? (
+                  filteredServices.map((service) => (
+                    <Button
+                      key={service.id}
+                      variant="ghost"
+                      className="flex items-center justify-start gap-3 h-auto p-3"
+                      onClick={() => handleServiceSelect(service)}
+                    >
+                      <span className="text-lg">{service.icon}</span>
+                      <div className="text-left">
+                        <div className="font-medium">{service.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {service.api}
+                        </div>
                       </div>
-                    </div>
-                  </Button>
-                ))}
+                    </Button>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">
+                      No services found
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Try a different search term or select from the available
+                      services above
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end">
                 <Button
                   onClick={() => setStep("configure")}
                   disabled={!selectedService}
+                  className="bg-primary hover:bg-primary/90"
                 >
                   Continue
                 </Button>
@@ -177,7 +193,9 @@ export function AddCredentialDialog({
 
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="accessToken">Access Token</Label>
+                      <Label htmlFor="accessToken">
+                        Access Token / API Key
+                      </Label>
                       <Textarea
                         id="accessToken"
                         value={credentialData.accessToken}
@@ -188,11 +206,11 @@ export function AddCredentialDialog({
                           })
                         }
                         className="mt-1 min-h-[100px]"
-                        placeholder="Enter your access token..."
+                        placeholder="Enter your access token or API key..."
                       />
                     </div>
 
-                    {/* Add Chat ID field for Telegram */}
+                    {/* Show Chat ID field only for Telegram */}
                     {selectedService.id === "telegram" && (
                       <div>
                         <Label htmlFor="chatId">Chat ID (optional)</Label>
@@ -226,6 +244,7 @@ export function AddCredentialDialog({
                           })
                         }
                         className="mt-1"
+                        placeholder="Enter the base URL for the API"
                       />
                     </div>
                   </div>
@@ -260,7 +279,12 @@ export function AddCredentialDialog({
                 <Button variant="outline" onClick={() => setStep("select")}>
                   Back
                 </Button>
-                <Button onClick={handleSave}>Save Credential</Button>
+                <Button
+                  onClick={handleSave}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Save Credential
+                </Button>
               </div>
             </div>
           </>
