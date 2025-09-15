@@ -1,21 +1,21 @@
-import { getFromQueue, addToQueue } from "../server/redis/index";
-import { runNode } from "./nodes/runNodes/runner";
 import prisma from "../../packages/db";
+import { addToQueue, getFromQueue } from "../server/redis/index";
+import { runNode } from "./nodes/runNodes/runner";
 
 const processJobs = async (): Promise<void> => {
   console.log("Worker started, listening for jobs...");
-  
+
   while (true) {
     try {
       const job = await getFromQueue(5);
       if (!job) continue;
-      
+
       console.log(`Processing job: ${job.id} (node: ${job.data.nodeId})`);
       const nodeResult = await runNode(
         {
-          type: job.type === 'telegram' ? 'Telegram' : 'ResendEmail',
-          template: job.data.nodeData,
-          credentialId: job.data.credentialId
+          type: job.type === "telegram" ? "Telegram" : "ResendEmail",
+          template: job.data.nodeData.template,
+          credentialId: job.data.credentialId,
         },
         job.data.context
       );
@@ -25,16 +25,19 @@ const processJobs = async (): Promise<void> => {
         nodeResult
       );
       const workflow = await prisma.workflow.findUnique({
-        where: { id: job.data.workflowId }
+        where: { id: job.data.workflowId },
       });
-      
+
       if (workflow && job.data.connections.length > 0) {
         const nodes = workflow.nodes as Record<string, any>;
         const updatedContext = { ...job.data.context, ...nodeResult };
         for (const nextNodeId of job.data.connections) {
           const nextNodeData = nodes[nextNodeId];
           if (nextNodeData) {
-            const connections = (workflow.connections as Record<string, string[]>);
+            const connections = workflow.connections as Record<
+              string,
+              string[]
+            >;
             await addToQueue({
               id: `${nextNodeId}-${job.data.executionId}`,
               type: nextNodeData.type.toLowerCase(),
@@ -44,13 +47,12 @@ const processJobs = async (): Promise<void> => {
                 nodeData: nextNodeData,
                 credentialId: nextNodeData.credentials,
                 context: updatedContext,
-                connections: connections[nextNodeId] || []
-              }
+                connections: connections[nextNodeId] || [],
+              },
             });
           }
         }
       }
-      
     } catch (error) {
       console.error("Error processing job:", error);
     }
@@ -58,21 +60,21 @@ const processJobs = async (): Promise<void> => {
 };
 
 const updateExecutionProgress = async (
-  executionId: string, 
-  nodeId: string, 
+  executionId: string,
+  nodeId: string,
   nodeResult: any
 ) => {
   try {
     const execution = await prisma.execution.findUnique({
-      where: { id: executionId }
+      where: { id: executionId },
     });
-    
+
     if (!execution) return;
-    
-    const currentResult = execution.result as any || { nodeResults: {} };
+
+    const currentResult = (execution.result as any) || { nodeResults: {} };
     const newTasksDone = execution.tasksDone + 1;
     const isComplete = newTasksDone >= (execution.totalTasks || 0);
-    
+
     await prisma.execution.update({
       where: { id: executionId },
       data: {
@@ -84,16 +86,17 @@ const updateExecutionProgress = async (
             ...currentResult.nodeResults,
             [nodeId]: {
               result: nodeResult,
-              completedAt: new Date().toISOString()
-            }
+              completedAt: new Date().toISOString(),
+            },
           },
-          ...(isComplete && { completedAt: new Date().toISOString() })
-        }
-      }
+          ...(isComplete && { completedAt: new Date().toISOString() }),
+        },
+      },
     });
-    
-    console.log(`Execution ${executionId}: ${newTasksDone}/${execution.totalTasks} tasks completed`);
-    
+
+    console.log(
+      `Execution ${executionId}: ${newTasksDone}/${execution.totalTasks} tasks completed`
+    );
   } catch (error) {
     console.error("Error updating execution progress:", error);
   }
