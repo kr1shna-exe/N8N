@@ -6,7 +6,7 @@ async function testEmail() {
 
     const result = await sendEmail(
       {
-        to: "jkchinnu444444@gmail.com",
+        to: "youremail@gmail.com",
         subject: "Test from workflow",
         body: "<p>Hello {{name}}, sent at {{time}}</p>",
       },
