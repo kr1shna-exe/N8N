@@ -14,7 +14,7 @@ const telegramSchema = z.object({
   platform: z.literal(Platform.Telegram),
   data: z.object({
     apiKey: z.string().min(1, "Api Key is required"),
-    chatId: z.string().min(1, "Chat Id is required"),
+    chatId: z.string().min(1, "Chat Id is required").optional(),
   }),
 });
 

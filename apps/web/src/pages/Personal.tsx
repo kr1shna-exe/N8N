@@ -1,7 +1,7 @@
 import { AddCredentialDialog } from "@/components/add-credential-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkflowCards } from "@/components/workflow-cards";
 import { WorkflowTabs } from "@/components/workflow-tabs";
 import { toast } from "@/hooks/use-toast";
@@ -200,12 +200,6 @@ const Personal = () => {
                         </Button>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="text-sm text-muted-foreground">
-                        Created{" "}
-                        {new Date(credential.createdAt).toLocaleDateString()}
-                      </div>
-                    </CardContent>
                   </Card>
                 ))}
               </div>

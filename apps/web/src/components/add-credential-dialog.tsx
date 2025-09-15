@@ -1,18 +1,17 @@
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Search, X, Sparkles, ExternalLink, Info } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ExternalLink, Search } from "lucide-react";
+import { useState } from "react";
 
 interface AddCredentialDialogProps {
   open: boolean;
@@ -28,26 +27,36 @@ const services = [
   { id: "discord", name: "Discord", api: "Discord API", icon: "🎮" },
 ];
 
-export function AddCredentialDialog({ open, onOpenChange, onSave }: AddCredentialDialogProps) {
+export function AddCredentialDialog({
+  open,
+  onOpenChange,
+  onSave,
+}: AddCredentialDialogProps) {
   const [step, setStep] = useState<"select" | "configure">("select");
-  const [selectedService, setSelectedService] = useState<typeof services[0] | null>(null);
+  const [selectedService, setSelectedService] = useState<
+    (typeof services)[0] | null
+  >(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [credentialData, setCredentialData] = useState({
     accessToken: "",
+    chatId: "",
     baseUrl: "",
     name: "",
   });
 
-  const filteredServices = services.filter(service =>
+  const filteredServices = services.filter((service) =>
     service.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleServiceSelect = (service: typeof services[0]) => {
+  const handleServiceSelect = (service: (typeof services)[0]) => {
     setSelectedService(service);
     setCredentialData({
       ...credentialData,
       name: service.name,
-      baseUrl: service.id === "telegram" ? "https://api.telegram.org" : `https://api.${service.id}.com`,
+      baseUrl:
+        service.id === "telegram"
+          ? "https://api.telegram.org"
+          : `https://api.${service.id}.com`,
     });
     setStep("configure");
   };
@@ -58,7 +67,6 @@ export function AddCredentialDialog({ open, onOpenChange, onSave }: AddCredentia
         id: Date.now().toString(),
         service: selectedService,
         ...credentialData,
-        createdAt: new Date().toISOString(),
       });
       handleClose();
     }
@@ -68,27 +76,27 @@ export function AddCredentialDialog({ open, onOpenChange, onSave }: AddCredentia
     setStep("select");
     setSelectedService(null);
     setSearchQuery("");
-    setCredentialData({ accessToken: "", baseUrl: "", name: "" });
+    setCredentialData({ accessToken: "", chatId: "", baseUrl: "", name: "" });
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl">Add new credential</DialogTitle>
+          <DialogDescription>
+            Configure credentials to connect with external services
+          </DialogDescription>
+        </DialogHeader>
+
         {step === "select" && (
           <>
-            <DialogHeader className="flex flex-row items-center justify-between">
-              <DialogTitle className="text-xl">Add new credential</DialogTitle>
-              <Button variant="ghost" size="icon" onClick={handleClose}>
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogHeader>
-            
             <div className="space-y-6">
               <p className="text-muted-foreground">
                 Select an app or service to connect to
               </p>
-              
+
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -98,7 +106,7 @@ export function AddCredentialDialog({ open, onOpenChange, onSave }: AddCredentia
                   className="pl-10"
                 />
               </div>
-              
+
               <div className="grid gap-2 max-h-60 overflow-y-auto">
                 {filteredServices.map((service) => (
                   <Button
@@ -110,14 +118,19 @@ export function AddCredentialDialog({ open, onOpenChange, onSave }: AddCredentia
                     <span className="text-lg">{service.icon}</span>
                     <div className="text-left">
                       <div className="font-medium">{service.name}</div>
-                      <div className="text-sm text-muted-foreground">{service.api}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {service.api}
+                      </div>
                     </div>
                   </Button>
                 ))}
               </div>
-              
+
               <div className="flex justify-end">
-                <Button onClick={() => setStep("configure")} disabled={!selectedService}>
+                <Button
+                  onClick={() => setStep("configure")}
+                  disabled={!selectedService}
+                >
                   Continue
                 </Button>
               </div>
@@ -127,101 +140,129 @@ export function AddCredentialDialog({ open, onOpenChange, onSave }: AddCredentia
 
         {step === "configure" && selectedService && (
           <>
-            <DialogHeader className="flex flex-row items-center justify-between pb-4">
-              <div className="flex items-center gap-3">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 pb-4">
                 <span className="text-2xl">{selectedService.icon}</span>
                 <div>
-                  <DialogTitle className="text-xl">{selectedService.name} account</DialogTitle>
-                  <p className="text-sm text-muted-foreground">{selectedService.api}</p>
+                  <DialogTitle className="text-xl">
+                    {selectedService.name} account
+                  </DialogTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedService.api}
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button onClick={handleSave} size="sm">
-                  Save
-                </Button>
-                <Button variant="ghost" size="icon" onClick={handleClose}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </DialogHeader>
 
-            <Tabs defaultValue="connection" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="connection">Connection</TabsTrigger>
-                <TabsTrigger value="sharing">Sharing</TabsTrigger>
-                <TabsTrigger value="details">Details</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="connection" className="space-y-6 mt-6">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-900/20 dark:border-yellow-800">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span>Need help filling out these fields?</span>
-                    <Button variant="link" size="sm" className="p-0 h-auto text-yellow-700 dark:text-yellow-400">
-                      <ExternalLink className="h-3 w-3 mr-1" />
-                      Open docs
-                    </Button>
-                  </div>
-                </div>
+              <Tabs defaultValue="connection" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="connection">Connection</TabsTrigger>
+                  <TabsTrigger value="sharing">Sharing</TabsTrigger>
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                </TabsList>
 
-                <div className="flex items-center gap-2 mb-4">
-                  <Button variant="outline" size="sm" className="text-purple-600 border-purple-600">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Ask Assistant
-                  </Button>
-                  <span className="text-sm text-muted-foreground">for setup instructions</span>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="accessToken">Access Token</Label>
-                    <Textarea
-                      id="accessToken"
-                      value={credentialData.accessToken}
-                      onChange={(e) => setCredentialData({...credentialData, accessToken: e.target.value})}
-                      className="mt-1 min-h-[100px]"
-                      placeholder="Enter your access token..."
-                    />
+                <TabsContent value="connection" className="space-y-6 mt-6">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-900/20 dark:border-yellow-800">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span>Need help filling out these fields?</span>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="p-0 h-auto text-yellow-700 dark:text-yellow-400"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Open docs
+                      </Button>
+                    </div>
                   </div>
 
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="accessToken">Access Token</Label>
+                      <Textarea
+                        id="accessToken"
+                        value={credentialData.accessToken}
+                        onChange={(e) =>
+                          setCredentialData({
+                            ...credentialData,
+                            accessToken: e.target.value,
+                          })
+                        }
+                        className="mt-1 min-h-[100px]"
+                        placeholder="Enter your access token..."
+                      />
+                    </div>
+
+                    {/* Add Chat ID field for Telegram */}
+                    {selectedService.id === "telegram" && (
+                      <div>
+                        <Label htmlFor="chatId">Chat ID (optional)</Label>
+                        <Input
+                          id="chatId"
+                          value={credentialData.chatId}
+                          onChange={(e) =>
+                            setCredentialData({
+                              ...credentialData,
+                              chatId: e.target.value,
+                            })
+                          }
+                          className="mt-1"
+                          placeholder="Enter chat ID (optional)"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Leave empty if you want to set it later
+                        </p>
+                      </div>
+                    )}
+
+                    <div>
+                      <Label htmlFor="baseUrl">Base URL</Label>
+                      <Input
+                        id="baseUrl"
+                        value={credentialData.baseUrl}
+                        onChange={(e) =>
+                          setCredentialData({
+                            ...credentialData,
+                            baseUrl: e.target.value,
+                          })
+                        }
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="sharing" className="space-y-4 mt-6">
+                  <p className="text-muted-foreground">
+                    Configure sharing settings for this credential.
+                  </p>
+                </TabsContent>
+
+                <TabsContent value="details" className="space-y-4 mt-6">
                   <div>
-                    <Label htmlFor="baseUrl">Base URL</Label>
+                    <Label htmlFor="credentialName">Credential Name</Label>
                     <Input
-                      id="baseUrl"
-                      value={credentialData.baseUrl}
-                      onChange={(e) => setCredentialData({...credentialData, baseUrl: e.target.value})}
+                      id="credentialName"
+                      value={credentialData.name}
+                      onChange={(e) =>
+                        setCredentialData({
+                          ...credentialData,
+                          name: e.target.value,
+                        })
+                      }
                       className="mt-1"
+                      placeholder="Enter a name for this credential"
                     />
                   </div>
-                </div>
+                </TabsContent>
+              </Tabs>
 
-                <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
-                  <Info className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <div className="text-sm text-muted-foreground">
-                    <span>Enterprise plan users can pull in credentials from external vaults.</span>
-                    <Button variant="link" size="sm" className="p-0 h-auto ml-1 text-primary">
-                      More info
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="sharing" className="space-y-4 mt-6">
-                <p className="text-muted-foreground">Configure sharing settings for this credential.</p>
-              </TabsContent>
-
-              <TabsContent value="details" className="space-y-4 mt-6">
-                <div>
-                  <Label htmlFor="credentialName">Credential Name</Label>
-                  <Input
-                    id="credentialName"
-                    value={credentialData.name}
-                    onChange={(e) => setCredentialData({...credentialData, name: e.target.value})}
-                    className="mt-1"
-                    placeholder="Enter a name for this credential"
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setStep("select")}>
+                  Back
+                </Button>
+                <Button onClick={handleSave}>Save Credential</Button>
+              </div>
+            </div>
           </>
         )}
       </DialogContent>

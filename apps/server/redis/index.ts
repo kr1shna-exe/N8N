@@ -6,12 +6,14 @@ interface Queue {
   id: string;
   type: "telegram" | "email";
   data: {
+    executionId: string;
     credentialId: string;
+    nodeId: string;
+    workflowId: string;
     nodeData: any;
     context: Record<string, any>;
-    nextJobs?: Queue[];
+    connections: string[];
   };
-  prevJobs?: any;
 }
 
 const QUEUE_NAME = "workflow-queue";

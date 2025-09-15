@@ -13,14 +13,14 @@ export default async function sendTelegramMessage(
   if (!credentials) {
     throw new Error("Telegram credential was not found");
   }
-  const data = credentials[0].data as { botToken: string; chatId: string };
-  const { botToken, chatId } = data;
-  if (!botToken || !chatId) {
+  const data = credentials[0].data as { apiKey: string; chatId: string };
+  const { apiKey, chatId } = data;
+  if (!apiKey || !chatId) {
     throw new Error("Telegram credentials are needed");
   }
   const msg = mustache.render(template.message, Context);
   const response = await fetch(
-    `https://api.telegram.org/bot${botToken}/sendMessage`,
+    `https://api.telegram.org/bot${apiKey}/sendMessage`,
     {
       method: "POST",
       headers: { "Content-type": "application/json" },

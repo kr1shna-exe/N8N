@@ -31,7 +31,7 @@ export const signup = async (req: Request, res: Response) => {
   const token = jwt.sign({ userId: newUser.id }, JWT_SECRET, {
     expiresIn: "1hr",
   });
-  res.cookie("access_token", token, { httpOnly: true });
+  res.cookie("access_token", token, { httpOnly: true, maxAge: 60 * 60 * 1000 });
   return res.json({ id: newUser.id, email: newUser.email });
 };
 
@@ -58,7 +58,7 @@ export const signin = async (req: Request, res: Response) => {
   }
   const password_check = await bcrypt.compare(
     user.password,
-    existingUser.password
+    existingUser.password,
   );
   if (!password_check) {
     return res.status(400).json({
@@ -68,7 +68,7 @@ export const signin = async (req: Request, res: Response) => {
   const token = jwt.sign({ userId: existingUser.id }, JWT_SECRET, {
     expiresIn: "1hr",
   });
-  res.cookie("access_token", token, { httpOnly: true });
+  res.cookie("access_token", token, { httpOnly: true, maxAge: 60 * 60 * 1000 });
   return res.json({ id: existingUser.id, token, email: existingUser.email });
 };
 

@@ -95,20 +95,31 @@ export const mapToBackendCredential = (frontendData: {
   name: string;
   service: { id: string; name: string; api: string; icon: string };
   accessToken: string;
+  chatId?: string;
   baseUrl?: string;
 }): credentialsSchema => {
   const platform =
     frontendData.service.id === "telegram"
       ? Platform.Telegram
       : Platform.ResendEmail;
-
-  return {
-    title: frontendData.name,
-    platform,
-    data: {
-      apiKey: frontendData.accessToken,
-    },
-  };
+  if (platform === Platform.Telegram) {
+    return {
+      title: frontendData.name,
+      platform,
+      data: {
+        apiKey: frontendData.accessToken,
+        chatId: frontendData.chatId || "",
+      },
+    };
+  } else {
+    return {
+      title: frontendData.name,
+      platform,
+      data: {
+        apiKey: frontendData.accessToken,
+      },
+    };
+  }
 };
 
 export const mapFromBackendCredential = (backendCredential: Credential) => {
