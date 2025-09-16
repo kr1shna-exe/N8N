@@ -1,6 +1,6 @@
+import { Request, Response } from "express";
 import prisma from "../../../packages/db";
 import { addToQueue } from "../redis";
-import { Request, Response } from "express";
 
 export const executeWorkflow = async (req: Request, res: Response) => {
   try {
@@ -32,7 +32,7 @@ export const executeWorkflow = async (req: Request, res: Response) => {
         id: `${nodeId}-${execution.id}`,
         type: nodeData.type.toLowerCase(),
         data: {
-          executionId: execution.id, // Pass execution ID
+          executionId: execution.id,
           workflowId,
           nodeId,
           credentialId: nodeData.credentials,
@@ -57,13 +57,13 @@ export const executeWorkflow = async (req: Request, res: Response) => {
 
 const findStartingNodes = (
   nodes: Record<string, any>,
-  connections: Record<string, string[]>,
+  connections: Record<string, string[]>
 ) => {
   const hasIncomingConnection = new Set<string>();
   Object.values(connections).forEach((targets) => {
     targets.forEach((target) => hasIncomingConnection.add(target));
   });
   return Object.keys(nodes).filter(
-    (nodeId) => !hasIncomingConnection.has(nodeId),
+    (nodeId) => !hasIncomingConnection.has(nodeId)
   );
 };
