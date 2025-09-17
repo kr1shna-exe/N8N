@@ -22,6 +22,8 @@
     "packages/*"
   ],
   "dependencies": {
+    "@langchain/core": "^0.3.76",
+    "@langchain/google-genai": "^0.2.18",
     "@prisma/client": "^6.16.1",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.9",
