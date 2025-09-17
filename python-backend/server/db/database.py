@@ -8,11 +8,13 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(DATABASE_URL,echo=True)
+engine = create_engine(DATABASE_URL, echo=True)
+
 
 def create_tables():
     SQLModel.metadata.create_all(engine)
 
-def get_db():
+
+def get_session() -> Generator[Session, None, None]:
     with Session(engine) as session:
-        yeild session
+        yield session

@@ -1,8 +1,8 @@
 from typing import Any, Dict, Optional
 from uuid import UUID
 
+from db.models.models import Platform, TriggerType
 from pydantic import BaseModel
-from server.db.models.models import Platform, TriggerType
 
 
 class UserSchema(BaseModel):

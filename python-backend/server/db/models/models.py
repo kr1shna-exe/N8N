@@ -55,7 +55,7 @@ class Workflow(SQLModel, table=True):
     user: User = Relationship(back_populates="workflow")
     webhook: Optional[Webhook] = Relationship(back_populates="workflow")
     nodes_list: List["Node"] = Relationship(back_populates="workflow")
-    executions: List["Execution"] = Relationship(back_populates="workflow")
+    execution: List["Execution"] = Relationship(back_populates="workflow")
 
 
 class Node(SQLModel, table=True):
