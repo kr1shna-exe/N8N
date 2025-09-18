@@ -3,8 +3,8 @@ from contextlib import asynccontextmanager
 from db.database import create_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes.credentials import router as credentials_router
-from routes.user import router as user_router
+from .routes.credentials import router as credentials_router
+from .routes.user import router as user_router
 
 app = FastAPI()
 

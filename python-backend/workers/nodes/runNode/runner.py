@@ -1,0 +1,26 @@
+from typing import Any, Dict
+
+from fastapi import HTTPException
+from workers.nodes.email import send_Email
+from workers.nodes.telegram import send_Telegram_Msg
+
+
+async def runNode(node: Any, context: Dict[str, Any]):
+    try:
+        node_type = node.get("type")
+        if node_type == "ResendEmail":
+            return await send_Email(node["credentialId"], node["template"], context)
+        elif node_type == "Telegram":
+            return await send_Telegram_Msg(
+                node["credentialId"], node["template"], context
+            )
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"Node type is not found: {node_type}"
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Internal server error while running code"
+        )

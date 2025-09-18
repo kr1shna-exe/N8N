@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from alembic import context
 from sqlmodel import SQLModel
 from sqlalchemy import engine_from_config, pool
-from server.db.models.models import User, Webhook, Credentials, Workflow, Node, Execution
+from db.models.models import User, Webhook, Credentials, Workflow, Node, Execution
 
 load_dotenv()
 

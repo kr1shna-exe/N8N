@@ -1,0 +1,9 @@
+{
+  "python.defaultInterpreterPath": "/Users/jkchinnu/super30/N8N/python-backend/venv/bin/python",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.analysis.autoImportCompletions": true,
+  "files.associations": {
+    "*.py": "python"
+  }
+}

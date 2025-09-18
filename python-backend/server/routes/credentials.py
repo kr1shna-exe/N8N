@@ -7,7 +7,7 @@ from db.models.models import Credentials, User
 from db.models.schemas import CredentialsSchema
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
-from routes.user import authenticate_user
+from .user import authenticate_user
 from sqlmodel import Session, select
 
 router = APIRouter()
