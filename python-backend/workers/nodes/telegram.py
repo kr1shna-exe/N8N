@@ -26,9 +26,6 @@ async def send_Telegram_Msg(
     message_text = pystache.render(template.get("message", ""), context)
     url = f"https://api.telegram.org/bot{api_Key}/sendMessage"
     payload = {"chat_id": chat_id, "text": message_text}
-    print("--- Telegram Debug Info ---")
-    print(f"URL: {url}")
-    print(f"Payload: {payload}")
     async with httpx.AsyncClient() as client:
         res = await client.post(url, json=payload)
         text = res.text

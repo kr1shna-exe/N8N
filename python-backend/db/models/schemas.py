@@ -15,11 +15,9 @@ class CredentialsSchema(BaseModel):
     platform: Platform
     data: Dict[str, Any]
 
-
-class WorkflowSchema(BaseModel):
-    title: str
-    enabled: bool
-    nodes: Dict[str, Any]
-    connections: Dict[str, Any]
-    trigger_type: TriggerType
-    webhook_id: Optional[UUID] = None
+class ExecutionSchema(BaseModel):
+    status: bool
+    tasks_done: int
+    total_tasks: Optional[int] = None
+    result: Dict[str, Any]
+    workflow_id: Optional[UUID] = None
