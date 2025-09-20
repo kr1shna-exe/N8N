@@ -2,6 +2,14 @@ import asyncio
 from typing import Any, Dict
 
 import pystache
+
+node_details = {
+    "type": "email",
+    "name": "Email Service", 
+    "description": "Send emails using Resend API",
+    "category": "Communication",
+    "icon": "📧"
+}
 import resend
 from db.database import get_db_session
 from db.models.models import Credentials

@@ -1,6 +1,14 @@
 from typing import Any, Dict
 
 import httpx
+
+node_details = {
+    "type": "telegram",
+    "name": "Telegram Bot",
+    "description": "Send messages via Telegram Bot API",
+    "category": "Communication",
+    "icon": "📱"
+}
 import pystache
 from db.database import get_db_session
 from db.models.models import Credentials

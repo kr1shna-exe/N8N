@@ -25,33 +25,15 @@ export function NodePalette({ onAddNode, className = "" }: NodePaletteProps) {
       setLoading(true);
       setError(null);
 
-      // Static nodes for now - you can make this dynamic later
-      const staticNodes = [
-        {
-          type: "telegram",
-          name: "Telegram Bot",
-          description: "Send messages via Telegram Bot API",
-          category: "Communication",
-          icon: "📱",
-        },
-        {
-          type: "email",
-          name: "Email Service",
-          description: "Send emails using Resend API",
-          category: "Communication",
-          icon: "📧",
-        },
-        {
-          type: "sms",
-          name: "SMS Service",
-          description: "Send SMS messages via Twilio API",
-          category: "Communication",
-          icon: "📲",
-        },
-      ];
-
-      setNodes(staticNodes);
-      console.log("Available nodes:", staticNodes);
+      const response = await fetch("http://localhost:8000/api/nodes/types");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to load nodes: ${response.status} ${errorText}`);
+      }
+      
+      const data = await response.json();
+      setNodes(data.nodes);
+      console.log("Available nodes:", data.nodes);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to load available nodes";
