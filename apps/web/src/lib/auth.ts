@@ -5,7 +5,7 @@ import {
   type signUpSchema,
 } from "../../../../packages/exports";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 const handleResponse = async (res: Response) => {
   if (!res.ok) {
@@ -31,7 +31,7 @@ export const authApi = {
       );
     }
     console.log("Ateempting from submit form");
-    const response = await fetch(`${API_URL}/user/signup`, {
+    const response = await fetch(`${API_URL}/user/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -58,31 +58,23 @@ export const authApi = {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(validateRequest.data),
-      credentials: "include", // Include cookies
+      credentials: "include",
     });
 
     const result = await handleResponse(response);
-
-    // Store token in localStorage if provided
-    if (result.token) {
-      localStorage.setItem("authToken", result.token);
+    if (result.access_token) {
+      localStorage.setItem("authToken", result.access_token);
     }
 
-    return result;
+    return {
+      id: result.user?.id || "",
+      email: result.user?.email || "",
+      token: result.access_token,
+    };
   },
 
-  // Sign out user
   signout: async (): Promise<void> => {
     localStorage.removeItem("authToken");
-    // Clear any cookies by making a request (you might want to add a signout endpoint)
-    try {
-      await fetch(`${API_URL}/user/signout`, {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch {
-      // Ignore errors on signout
-    }
   },
 
   // Get current user (if authenticated)
@@ -91,9 +83,8 @@ export const authApi = {
     if (!token) return null;
 
     try {
-      // Use the secure verify endpoint
-      const response = await fetch(`${API_URL}/user/verify`, {
-        method: "GET",
+      const response = await fetch(`${API_URL}/user/verify-token`, {
+        method: "POST",
         headers: {
           authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -101,7 +92,6 @@ export const authApi = {
       });
 
       if (!response.ok) {
-        // Token is invalid or expired
         localStorage.removeItem("authToken");
         return null;
       }
@@ -123,9 +113,6 @@ export const authApi = {
       return null;
     }
   },
-
-  // Check if user is authenticated (basic token existence check)
-  // Note: This only checks if token exists, full validation happens in getCurrentUser
   isAuthenticated: (): boolean => {
     const token = localStorage.getItem("authToken");
     return !!token;

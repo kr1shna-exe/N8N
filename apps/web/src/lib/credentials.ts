@@ -15,9 +15,9 @@ type Credential = {
   userId: string;
 };
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-const getAuthToken = () => {
+export const getAuthToken = () => {
   return localStorage.getItem("authToken") || "";
 };
 
@@ -58,13 +58,16 @@ export const credentialsApi = {
   },
 
   deleteCredentials: async (credentialId: string) => {
-    const response = await fetch(`${API_URL}/api/user/delete/${credentialId}`, {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${getAuthToken()}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetch(
+      `${API_URL}/api/user/credentials/${credentialId}`,
+      {
+        method: "DELETE",
+        headers: {
+          authorization: `Bearer ${getAuthToken()}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return handleResponse(response);
   },
 

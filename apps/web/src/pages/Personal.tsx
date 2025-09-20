@@ -10,7 +10,8 @@ import {
   mapFromBackendCredential,
   mapToBackendCredential,
 } from "@/lib/credentials";
-import { Plus, Trash2 } from "lucide-react";
+import { executionService } from "@/lib/executions";
+import { CheckCircle, Clock, Loader, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const Personal = () => {
@@ -19,13 +20,33 @@ const Personal = () => {
   const [credentials, setCredentials] = useState<any[]>([]);
   const [showAddButton, setShowAddButton] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [executions, setExecutions] = useState<any[]>([]);
+  const [executionsLoading, setExecutionsLoading] = useState(false);
 
   // Load credentials when switching to credentials tab
   useEffect(() => {
     if (activeTab === "credentials") {
       loadCredentials();
+    } else if (activeTab === "executions") {
+      loadExecutions();
     }
   }, [activeTab]);
+
+  const loadExecutions = async () => {
+    try {
+      setExecutionsLoading(true);
+      const response = await executionService.getExecutions();
+      setExecutions(response.executions);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load executions",
+        variant: "destructive",
+      });
+    } finally {
+      setExecutionsLoading(false);
+    }
+  };
 
   const loadCredentials = async () => {
     try {
@@ -85,6 +106,30 @@ const Personal = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const getStatusIcon = (
+    status: boolean,
+    tasks_done: number,
+    total_tasks: number
+  ) => {
+    if (status) {
+      return <CheckCircle className="h-5 w-5 text-green-500" />;
+    } else if (tasks_done > 0) {
+      return <Loader className="h-5 w-5 text-blue-500 animate-spin" />;
+    } else {
+      return <Clock className="h-5 w-5 text-gray-500" />;
+    }
+  };
+
+  const getStatusText = (
+    status: boolean,
+    tasks_done: number,
+    total_tasks: number
+  ) => {
+    if (status) return "Completed";
+    if (tasks_done > 0) return "Running";
+    return "Pending";
   };
 
   return (
@@ -209,13 +254,99 @@ const Personal = () => {
       )}
 
       {activeTab === "executions" && (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-foreground mb-2">
-            No executions yet
-          </h3>
-          <p className="text-muted-foreground">
-            Your workflow executions will appear here
-          </p>
+        <div className="space-y-4">
+          {executionsLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading executions...</p>
+            </div>
+          ) : executions.length === 0 ? (
+            <div className="text-center py-12">
+              <h3 className="text-lg font-medium text-foreground mb-2">
+                No executions yet
+              </h3>
+              <p className="text-muted-foreground">
+                Your workflow executions will appear here
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-foreground">
+                  Recent Executions ({executions.length})
+                </h3>
+                <Button onClick={loadExecutions} variant="outline" size="sm">
+                  Refresh
+                </Button>
+              </div>
+
+              <div className="grid gap-4">
+                {executions.map((execution) => (
+                  <Card
+                    key={execution.id}
+                    className="hover:shadow-md transition-shadow"
+                  >
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(
+                          execution.status,
+                          execution.tasks_done,
+                          execution.total_tasks
+                        )}
+                        <div>
+                          <CardTitle className="text-base">
+                            Execution {execution.id.slice(-8)}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            Workflow: {execution.workflow_id}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge
+                          variant={
+                            execution.status
+                              ? "default"
+                              : execution.tasks_done > 0
+                                ? "secondary"
+                                : "outline"
+                          }
+                        >
+                          {getStatusText(
+                            execution.status,
+                            execution.tasks_done,
+                            execution.total_tasks
+                          )}
+                        </Badge>
+                        <div className="text-sm text-muted-foreground">
+                          {execution.tasks_done}/{execution.total_tasks} tasks
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <div className="px-6 pb-4">
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        {/* <span>Started: {formatDate(execution.created_at)}</span>
+                        {execution.status && (
+                          <span>
+                            Completed: {formatDate(execution.updated_at)}
+                          </span>
+                        )} */}
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            execution.status ? "bg-green-500" : "bg-blue-500"
+                          }`}
+                          style={{
+                            width: `${(execution.tasks_done / execution.total_tasks) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

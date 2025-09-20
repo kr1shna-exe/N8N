@@ -1,12 +1,19 @@
-import os, sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from contextlib import asynccontextmanager
-from db.database import create_tables
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from db.database import create_tables
 from server.routes.credentials import router as credentials_router
+from server.routes.executions import router as execution_router
 from server.routes.user import router as user_router
+from server.routes.workflow import execute_workflow
 from server.routes.workflow import router as workflow_router
+
 app = FastAPI()
 
 
@@ -26,6 +33,7 @@ app.add_middleware(
 app.include_router(user_router, prefix="/api/user", tags=["users"])
 app.include_router(credentials_router, prefix="/api/user", tags=["credentials"])
 app.include_router(workflow_router, prefix="/api", tags=["workflows"])
+app.include_router(execution_router, prefix="/api", tags=["executions"])
 if __name__ == "__main__":
     import uvicorn
 

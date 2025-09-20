@@ -55,4 +55,35 @@ async def user_signin(user: UserSchema, db: Session = Depends(get_session)):
     if not pwd_context.verify(user.password, existing_user.password):
         raise HTTPException(status_code=400, detail="Password does not match")
     access_token = create_access_token(data={"sub": existing_user.email})
-    return {"access_token": access_token, "message": "Logged In Successfully"}
+    return {"access_token": access_token, "message": "Logged In Successfully", "user": { "id": str(existing_user.id), "email": existing_user.email}}
+
+@router.post("/verify-token")
+async def verify_user_token(
+    credentials: HTTPBasicCredentials = Depends(security),
+    db: Session = Depends(get_session)
+):
+    try:
+        token = credentials.credentials
+        email = verify_token(token)
+        
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+        statement = select(User).where(User.email == email)
+        user = db.exec(statement).first()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "success": True,
+            "user": {
+                "id": str(user.id),
+                "email": user.email
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Token verification failed")
