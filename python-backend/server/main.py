@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routes.credentials import router as credentials_router
 from .routes.user import router as user_router
-
+from .routes.workflow import router as workflow_router
 app = FastAPI()
 
 
@@ -24,7 +24,7 @@ app.add_middleware(
 )
 app.include_router(user_router, prefix="/api/user", tags=["users"])
 app.include_router(credentials_router, prefix="/api/user", tags=["credentials"])
-
+app.include_router(workflow_router, prefix="/api", tags=["workflows"])
 if __name__ == "__main__":
     import uvicorn
 
