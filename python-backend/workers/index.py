@@ -1,10 +1,9 @@
+import os, sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import asyncio
 from typing import Any
-
-from fastapi import Depends
-from nodes.runNode.runner import runNode
+from workers.nodes.runNode.runner import runNode
 from sqlmodel import Session
-
 from db.database import get_db_session
 from db.models.models import Execution, Workflow
 from server.redis.redis import addToQueue, getFromQueue
@@ -42,7 +41,7 @@ async def process_jobs():
         try:
             job = await getFromQueue(2)
             if not job:
-                asyncio.sleep(0.1)
+                await asyncio.sleep(0.1)
                 continue
             node_type = "Telegram" if job.get("type") == "telegram" else "ResendEmail"
             node = {

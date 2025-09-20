@@ -1,4 +1,4 @@
-from ..controller.user import create_access_token, verify_token
+from server.controller.user import create_access_token, verify_token
 from db.database import get_session
 from db.models.models import User
 from db.models.schemas import UserSchema

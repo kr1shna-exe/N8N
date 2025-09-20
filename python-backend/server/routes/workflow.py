@@ -1,12 +1,9 @@
 from typing import Any, Dict
-
 from fastapi import APIRouter, Depends, HTTPException
-from redis.redis import addToQueue
+from server.redis.redis import addToQueue
 from sqlmodel import Session, select
-
 from db.database import get_session
-from db.models.models import Workflow
-from db.models.schemas import ExecutionSchema
+from db.models.models import Execution, Workflow
 
 router = APIRouter()
 
@@ -24,7 +21,7 @@ async def execute_workflow(
         nodes: Dict[str, Any]  = workflow.nodes
         connections: Dict[str, Any] = workflow.connections
         total_tasks = len(nodes)
-        execution = ExecutionSchema(
+        execution = Execution(
             workflow_id = workflow_id,
             status = False,
             tasks_done = 0,
@@ -41,8 +38,8 @@ async def execute_workflow(
                 "id": f"{node_id}-{execution.id}",
                 "type": node_data.get("type","").lower(),
                 "data": {
-                "executionId": execution.id,
-                "workflowId": execution.workflow_id,
+                "executionId": str(execution.id),
+                "workflowId": str(execution.workflow_id),
                 "nodeId": node_id,
                 "credentialId": node_data.get("credentials"),
                 "nodeData": node_data,

@@ -1,25 +1,14 @@
 import json
-from typing import Any, Dict, Literal
+from typing import Any, Dict
 from exports.redis import redis
-
-
-class Queue:
-    def __init__(
-        self, id: str, type: Literal["telegram", "email"], data: Dict[str, Any]
-    ):
-        self.id = id
-        self.type = type
-        self.data = data
-
-
 QUEUE_NAME = "workflow-queue"
 
 
-async def addToQueue(job: Queue):
+async def addToQueue(job: Dict[str, Any]):
     try:
-        job_data = {"id": job.id, "type": job.type, "data": job.data}
+        job_data = {"id": job["id"], "type": job["type"], "data": job["data"]}
         redis.lpush(QUEUE_NAME, json.dumps(job_data))
-        print(f"Job of {job.id} added to queue: {job.type}")
+        print(f"Job of {job['id']} added to queue: {job['type']}")
     except Exception as error:
         print(f"Error while entering the queue: {error}")
 

@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
 from fastapi import HTTPException
-from workers.nodes.email import send_Email
-from workers.nodes.telegram import send_Telegram_Msg
+from ..email import send_Email
+from ..telegram import send_Telegram_Msg
 
 
 async def runNode(node: Any, context: Dict[str, Any]):

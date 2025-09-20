@@ -1,11 +1,12 @@
+import os, sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from contextlib import asynccontextmanager
-
 from db.database import create_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes.credentials import router as credentials_router
-from .routes.user import router as user_router
-from .routes.workflow import router as workflow_router
+from server.routes.credentials import router as credentials_router
+from server.routes.user import router as user_router
+from server.routes.workflow import router as workflow_router
 app = FastAPI()
 
 
