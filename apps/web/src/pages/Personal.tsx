@@ -323,14 +323,7 @@ const Personal = () => {
                       </div>
                     </CardHeader>
                     <div className="px-6 pb-4">
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        {/* <span>Started: {formatDate(execution.created_at)}</span>
-                        {execution.status && (
-                          <span>
-                            Completed: {formatDate(execution.updated_at)}
-                          </span>
-                        )} */}
-                      </div>
+                      <div className="flex justify-between text-sm text-muted-foreground"></div>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                         <div
                           className={`h-2 rounded-full transition-all duration-300 ${
