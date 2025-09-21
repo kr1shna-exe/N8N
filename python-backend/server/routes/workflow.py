@@ -65,7 +65,7 @@ async def execute_workflow(
 @router.get("/workflow/{workflow_id}")
 async def get_workflow(workflow_id: str, db: Session = Depends(get_session)):
     try:
-        statement = select(Workflow).where(Workflow.workflow_id == workflow_id)
+        statement = select(Workflow).where(Workflow.id == workflow_id)
         workflow = db.exec(statement).first()
         if not workflow:
             raise HTTPException(status_code=400, detail="Workflow not found")

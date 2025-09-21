@@ -41,18 +41,18 @@ const WorkflowEditor = () => {
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
       setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes]
+    [setNodes],
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
       setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges]
+    [setEdges],
   );
 
   const onConnect = useCallback(
     (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges]
+    [setEdges],
   );
 
   const addNodeFromSelector = useCallback(
@@ -101,8 +101,35 @@ const WorkflowEditor = () => {
 
       console.log(`Added ${nodeType.name} node to workflow`);
     },
-    [nodes, setNodes]
+    [nodes, setNodes],
   );
+
+  const handleSaveWorkflow = async () => {
+    const backendNodes = {};
+    for (const node of nodes) {
+      backendNodes[node.id] = {
+        id: node.id,
+        type: node.data.nodeType,
+        data: node.data,
+      };
+    }
+    const backendConnections = {};
+    for (const edge of edges) {
+      const sourceId = edge.source;
+      const targetId = edge.target;
+      if (!backendConnections[sourceId]) {
+        backendConnections[sourceId] = [];
+      }
+      backendConnections[sourceId].push(targetId);
+    }
+    const workflowData = {
+      title: "My new Workflow",
+      nodes: backendNodes,
+      connections: backendConnections,
+      trigger_type: "Manual",
+    };
+    console.log("Workflow data to be sent to backend: ", workflowData);
+  };
 
   return (
     <div className="h-screen w-full bg-background flex flex-col">
@@ -123,7 +150,7 @@ const WorkflowEditor = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleSaveWorkflow}>
             <Save className="w-4 h-4 mr-2" />
             Save
           </Button>

@@ -47,7 +47,7 @@ export const executionService = {
         {
           method: "POST",
           headers: {
-            authorization: `Bearer ${getAuthToken}`,
+            authorization: `Bearer ${getAuthToken()}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(data),
