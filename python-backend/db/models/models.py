@@ -16,6 +16,14 @@ class TriggerType(str, Enum):
     WEBHOOK = "Webhook"
 
 
+class ExecutionStatus(str, Enum):
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    PAUSED = "PAUSED"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
 class User(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     email: str = Field(unique=True)
@@ -69,7 +77,7 @@ class Node(SQLModel, table=True):
 
 class Execution(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    status: bool = Field(default=False)
+    status: ExecutionStatus = Field(default=ExecutionStatus.RUNNING)
     tasks_done: int = Field(default=0)
     total_tasks: Optional[int] = None
     result: Optional[Dict[str, Any]] = Field(sa_column=Column(JSON))

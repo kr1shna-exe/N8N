@@ -5,7 +5,7 @@ from typing import Any
 from workers.nodes.runNode.runner import runNode
 from sqlmodel import Session
 from db.database import get_db_session
-from db.models.models import Execution, Workflow
+from db.models.models import Execution, ExecutionStatus, Workflow
 from server.redis.redis import addToQueue, getFromQueue
 
 
@@ -28,8 +28,8 @@ async def update_execution(execution_id: str, node_id: str, node_result: Any, db
     }
     if is_complete:
         new_result["completedAt"] = asyncio.get_event_loop().time()
+        execution.status = ExecutionStatus.COMPLETED
     execution.tasks_done = new_tasks_done
-    execution.status = bool(is_complete)
     execution.result = new_result
     db.add(execution)
     db.commit()
@@ -43,14 +43,29 @@ async def process_jobs():
             if not job:
                 await asyncio.sleep(0.1)
                 continue
-            node_type = "Telegram" if job.get("type") == "telegram" else "ResendEmail"
+
+            job_type = job.get("type")
+            db = get_db_session()
+
+            if job_type == "form":
+                try:
+                    execution = db.get(Execution, job["data"]["executionId"])
+                    if execution:
+                        execution.status = ExecutionStatus.PAUSED
+                        db.add(execution)
+                        db.commit()
+                        print(f"Execution {execution.id} paused for form input.")
+                finally:
+                    db.close()
+                continue
+
             node = {
-                    "type": node_type,
+                    "type": job_type,
                     "template": job["data"]["nodeData"].get("template"),
                     "credentialId": job["data"].get("credentialId")
                 }
             node_result = await runNode(node, job["data"].get("context", {}))
-            db = get_db_session()
+            
             try:
                 await update_execution(job["data"]["executionId"], job["data"]["nodeId"], node_result,db)
                 workflow = db.get(Workflow, job["data"]["workflowId"])
