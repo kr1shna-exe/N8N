@@ -23,7 +23,6 @@ const Personal = () => {
   const [executions, setExecutions] = useState<any[]>([]);
   const [executionsLoading, setExecutionsLoading] = useState(false);
 
-  // Load credentials when switching to credentials tab
   useEffect(() => {
     if (activeTab === "credentials") {
       loadCredentials();
@@ -134,7 +133,6 @@ const Personal = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold text-foreground">Personal</h1>
         <p className="text-muted-foreground">
@@ -142,21 +140,16 @@ const Personal = () => {
         </p>
       </div>
 
-      {/* Tabs */}
       <WorkflowTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Content based on active tab */}
       {activeTab === "workflows" && (
         <div className="space-y-8">
-          {/* Welcome Section */}
           <div className="text-center space-y-4">
             <h2 className="text-xl font-medium text-foreground">
               👋 Welcome Krishna!
             </h2>
             <p className="text-muted-foreground">Create your first workflow</p>
           </div>
-
-          {/* Action Cards */}
           <div className="flex justify-center">
             <WorkflowCards />
           </div>

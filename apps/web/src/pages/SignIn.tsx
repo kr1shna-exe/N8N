@@ -16,7 +16,6 @@ const SignIn = () => {
   const { signin, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
   if (isAuthenticated) {
     return <Navigate to="/personal" replace />;
   }

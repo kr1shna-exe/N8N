@@ -1,4 +1,4 @@
-import { NodePalette } from "@/components/node-palette";
+import { NodeSelector } from "@/components/node-selector";
 import { Button } from "@/components/ui/button";
 import type { NodeType } from "@/lib/nodes";
 import {
@@ -6,40 +6,37 @@ import {
   applyEdgeChanges,
   applyNodeChanges,
   Connection,
-  Edge,
   EdgeChange,
-  Node,
   NodeChange,
   ReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  ArrowLeft,
-  PanelRightClose,
-  PanelRightOpen,
-  Play,
-  Save,
-} from "lucide-react";
+import { ArrowLeft, Play, Plus, Save } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const initialNodes: Node[] = [
-  {
-    id: "1",
-    type: "input",
-    data: { label: "Start" },
-    position: { x: 250, y: 25 },
-    className: "!bg-muted !border-border !text-foreground",
-  },
-];
+interface Node {
+  id: string;
+  type?: string;
+  data: Record<string, unknown>;
+  position: { x: number; y: number };
+  className?: string;
+  style?: Record<string, unknown>;
+}
+
+interface Edge {
+  id?: string;
+  source?: string;
+  target?: string;
+}
 
 const initialEdges: Edge[] = [];
 
 const WorkflowEditor = () => {
   const navigate = useNavigate();
-  const [nodes, setNodes] = useState<Node[]>(initialNodes);
+  const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
-  const [showNodePalette, setShowNodePalette] = useState(true);
+  const [nodeSelectorOpen, setNodeSelectorOpen] = useState(false);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
@@ -58,20 +55,39 @@ const WorkflowEditor = () => {
     [setEdges]
   );
 
-  const addNodeFromPalette = useCallback(
+  const addNodeFromSelector = useCallback(
     (nodeType: NodeType) => {
-      const newNodeId = `${Date.now()}`; // Use timestamp for unique IDs
-      const newNode: Node = {
-        id: newNodeId,
-        type: "default",
-        data: {
+      const newNodeId = `${Date.now()}`;
+      let nodeData;
+      if (nodeType.type === "manual") {
+        nodeData = {
+          label: "Manual Trigger",
+          nodeType: "manual",
+          icon: "▶️",
+          description: "Manually trigger the workflow",
+        };
+      } else if (nodeType.type === "webhook") {
+        nodeData = {
+          label: "Webhook",
+          nodeType: "webhook",
+          icon: "🔗",
+          description: "Trigger workflow via HTTP webhook",
+        };
+      } else {
+        nodeData = {
           label: `${nodeType.icon} ${nodeType.name}`,
           nodeType: nodeType.type,
           icon: nodeType.icon,
           description: nodeType.description,
-        },
+        };
+      }
+
+      const newNode: Node = {
+        id: newNodeId,
+        type: "default",
+        data: nodeData,
         position: {
-          x: 300 + nodes.length * 100,
+          x: 300 + nodes.length * 120,
           y: 150 + (nodes.length % 3) * 100,
         },
         className: "!bg-card !border-border !text-foreground shadow-sm",
@@ -81,7 +97,6 @@ const WorkflowEditor = () => {
         },
       };
 
-      // Add the new node
       setNodes((nds) => [...nds, newNode]);
 
       console.log(`Added ${nodeType.name} node to workflow`);
@@ -91,7 +106,6 @@ const WorkflowEditor = () => {
 
   return (
     <div className="h-screen w-full bg-background flex flex-col">
-      {/* Header */}
       <header className="h-14 border-b border-border bg-background px-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
@@ -109,18 +123,6 @@ const WorkflowEditor = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowNodePalette(!showNodePalette)}
-          >
-            {showNodePalette ? (
-              <PanelRightClose className="w-4 h-4 mr-2" />
-            ) : (
-              <PanelRightOpen className="w-4 h-4 mr-2" />
-            )}
-            {showNodePalette ? "Hide" : "Show"} Nodes
-          </Button>
           <Button variant="outline" size="sm">
             <Save className="w-4 h-4 mr-2" />
             Save
@@ -132,34 +134,52 @@ const WorkflowEditor = () => {
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex bg-background">
-        {/* Node Palette */}
-        {showNodePalette && (
-          <NodePalette
-            onAddNode={addNodeFromPalette}
-            className="flex-shrink-0"
-          />
+      <div className="flex-1 bg-background relative">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          className="bg-background"
+          proOptions={{ hideAttribution: true }}
+          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          minZoom={0.1}
+          maxZoom={2}
+          attributionPosition="bottom-left"
+          fitView
+        ></ReactFlow>
+
+        {nodes.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <div
+              className="flex flex-col items-center gap-3 cursor-pointer group"
+              onClick={() => setNodeSelectorOpen(true)}
+            >
+              <div className="w-32 h-24 border-2 border-dashed border-muted-foreground/40 group-hover:border-primary/60 rounded-lg flex items-center justify-center transition-colors">
+                <Plus className="w-8 h-8 text-muted-foreground/60 group-hover:text-primary/80 transition-colors" />
+              </div>
+              <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                Add first step...
+              </span>
+            </div>
+          </div>
         )}
 
-        {/* Workflow Canvas */}
-        <div className="flex-1 bg-background">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            className="bg-background"
-            proOptions={{ hideAttribution: true }}
-            defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-            minZoom={0.1}
-            maxZoom={2}
-            attributionPosition="bottom-left"
-            fitView
-          >
-            {/* We can add controls, background, etc. here */}
-          </ReactFlow>
+        <div className="absolute top-4 right-4 z-10">
+          <NodeSelector
+            onAddNode={addNodeFromSelector}
+            open={nodeSelectorOpen}
+            onOpenChange={setNodeSelectorOpen}
+            trigger={
+              <Button
+                size="sm"
+                className="rounded-full w-10 h-10 p-0 shadow-lg bg-primary hover:bg-primary/90"
+              >
+                <Plus className="w-5 h-5" />
+              </Button>
+            }
+          />
         </div>
       </div>
     </div>

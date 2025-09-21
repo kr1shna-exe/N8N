@@ -22,7 +22,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
-    // Redirect to signin page, but save the current location
     return <Navigate to="/signin" state={{ from: location }} replace />;
   }
 

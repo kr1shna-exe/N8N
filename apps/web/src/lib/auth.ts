@@ -22,7 +22,6 @@ export interface AuthUser {
 }
 
 export const authApi = {
-  // Sign up a new user
   signup: async (userData: signUpSchema): Promise<AuthUser> => {
     const validateRequest = SignupSchema.safeParse(userData);
     if (!validateRequest.success) {
@@ -37,13 +36,12 @@ export const authApi = {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(validateRequest.data),
-      credentials: "include", // Include cookies
+      credentials: "include",
     });
 
     return handleResponse(response);
   },
 
-  // Sign in an existing user
   signin: async (userData: signInSchema): Promise<AuthUser> => {
     const validateRequest = SigninSchema.safeParse(userData);
     if (!validateRequest.success) {
@@ -77,7 +75,6 @@ export const authApi = {
     localStorage.removeItem("authToken");
   },
 
-  // Get current user (if authenticated)
   getCurrentUser: async (): Promise<AuthUser | null> => {
     const token = localStorage.getItem("authToken");
     if (!token) return null;

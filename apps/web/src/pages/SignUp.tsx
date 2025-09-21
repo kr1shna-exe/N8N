@@ -17,13 +17,10 @@ const SignUp = () => {
   const [loading, setLoading] = useState(false);
   const { signup, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-
-  // Redirect if already authenticated
   if (isAuthenticated) {
     return <Navigate to="/personal" replace />;
   }
 
-  // Password validation
   const passwordValidation = {
     minLength: password.length >= 4,
     match: password === confirmPassword && confirmPassword !== "",
@@ -167,7 +164,6 @@ const SignUp = () => {
                 </div>
               </div>
 
-              {/* Password Requirements */}
               {password && (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
