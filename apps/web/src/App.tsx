@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Admin from "./pages/Admin.js";
+import FormPage from "./pages/Form.tsx";
 import Index from "./pages/Index.js";
 import Insights from "./pages/Insights.js";
 import NotFound from "./pages/NotFound.js";
@@ -30,6 +31,7 @@ const App = () => (
             {/* Public routes */}
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/form/:execution_id" element={<FormPage />} />
 
             {/* Protected routes */}
             <Route

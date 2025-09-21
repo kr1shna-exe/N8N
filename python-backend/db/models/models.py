@@ -82,5 +82,6 @@ class Execution(SQLModel, table=True):
     total_tasks: Optional[int] = None
     result: Optional[Dict[str, Any]] = Field(sa_column=Column(JSON))
     workflow_id: UUID = Field(foreign_key="workflow.id")
+    paused_node_id: Optional[str] = None
 
     workflow: Workflow = Relationship(back_populates="execution")

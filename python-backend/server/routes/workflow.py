@@ -1,32 +1,35 @@
 from typing import Any, Dict
+
 from fastapi import APIRouter, Depends, HTTPException
-from server.redis.redis import addToQueue
 from sqlmodel import Session, select
+
 from db.database import get_session
-from db.models.models import Execution, Workflow
+from db.models.models import Execution, ExecutionStatus, Workflow
+from server.redis.redis import addToQueue
 
 router = APIRouter()
 
+
 @router.post("/workflow/{workflow_id}")
 async def execute_workflow(
-        workflow_id: str,
-        context: Dict[str, Any],
-        db: Session = Depends(get_session)
+    workflow_id: str, context: Dict[str, Any], db: Session = Depends(get_session)
 ):
     try:
         statement = select(Workflow).where(Workflow.id == workflow_id)
         workflow = db.exec(statement).first()
         if not workflow:
-            raise HTTPException(status_code=400, detail="No workflow found for the id provided")
-        nodes: Dict[str, Any]  = workflow.nodes
+            raise HTTPException(
+                status_code=400, detail="No workflow found for the id provided"
+            )
+        nodes: Dict[str, Any] = workflow.nodes
         connections: Dict[str, Any] = workflow.connections
         total_tasks = len(nodes)
         execution = Execution(
-            workflow_id = workflow_id,
-            status = False,
-            tasks_done = 0,
-            total_tasks = total_tasks,
-            result = { "triggerPyload": context, "nodeResults": {}}
+            workflow_id=workflow_id,
+            status=ExecutionStatus.RUNNING,
+            tasks_done=0,
+            total_tasks=total_tasks,
+            result={"triggerPyload": context, "nodeResults": {}},
         )
         db.add(execution)
         db.commit()
@@ -36,28 +39,39 @@ async def execute_workflow(
             node_data = nodes[node_id]
             job = {
                 "id": f"{node_id}-{execution.id}",
-                "type": node_data.get("type","").lower(),
+                "type": node_data.get("type", "").lower(),
                 "data": {
-                "executionId": str(execution.id),
-                "workflowId": str(execution.workflow_id),
-                "nodeId": node_id,
-                "credentialId": node_data.get("credentials"),
-                "nodeData": node_data,
-                "context": context,
-                "connections": connections.get(node_id, [])
-                }
+                    "executionId": str(execution.id),
+                    "workflowId": str(execution.workflow_id),
+                    "nodeId": node_id,
+                    "credentialId": node_data.get("credentials"),
+                    "nodeData": node_data,
+                    "context": context,
+                    "connections": connections.get(node_id, []),
+                },
             }
             await addToQueue(job)
         return {
             "message": "Workflow execution started",
             "executionId": str(execution.id),
             "workflowId": workflow_id,
-            "totalTasks": total_tasks
-            }
+            "totalTasks": total_tasks,
+        }
     except Exception as error:
         print(f"Error while running the workflow: {error}")
         raise HTTPException(status_code=400, detail="Error occured")
 
+
+@router.get("/workflow/{workflow_id}")
+async def get_workflow(workflow_id: str, db: Session = Depends(get_session)):
+    try:
+        statement = select(Workflow).where(Workflow.workflow_id == workflow_id)
+        workflow = db.exec(statement).first()
+        if not workflow:
+            raise HTTPException(status_code=400, detail="Workflow not found")
+        return workflow
+    except Exception as e:
+        print(f"Error while fetching the workflow: {e}")
 
 
 def find_starting_node(nodes: Dict[str, Any], connections: Dict[str, Any]):

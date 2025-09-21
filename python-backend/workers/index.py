@@ -52,9 +52,10 @@ async def process_jobs():
                     execution = db.get(Execution, job["data"]["executionId"])
                     if execution:
                         execution.status = ExecutionStatus.PAUSED
+                        execution.paused_node_id = job["data"]["nodeId"]
                         db.add(execution)
                         db.commit()
-                        print(f"Execution {execution.id} paused for form input.")
+                        print(f"Execution {execution.id} paused for form input at node {job['data']['nodeId']}.")
                 finally:
                     db.close()
                 continue
