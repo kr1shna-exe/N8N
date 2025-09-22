@@ -1,10 +1,11 @@
+import { CustomNode } from "@/components/custom-node";
+import { NodeConfigurationDialog } from "@/components/node-configuration-dialog";
 import { NodeSelector } from "@/components/node-selector";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { executionService } from "@/lib/executions";
 import type { NodeType } from "@/lib/nodes";
 import { workflowService } from "@/lib/workflows";
-import { Description } from "@radix-ui/react-alert-dialog";
 import {
   addEdge,
   applyEdgeChanges,
@@ -17,12 +18,21 @@ import {
 import "@xyflow/react/dist/style.css";
 import { ArrowLeft, Play, Plus, Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 interface Node {
   id: string;
   type?: string;
-  data: Record<string, unknown>;
+  data: {
+    label?: string;
+    nodeType?: string;
+    icon?: string;
+    description?: string;
+    config?: {
+      credentialId: string;
+      template: Record<string, string>;
+    };
+    configured?: boolean;
+  };
   position: { x: number; y: number };
   className?: string;
   style?: Record<string, unknown>;
@@ -34,29 +44,82 @@ interface Edge {
   target?: string;
 }
 
+interface NodeConfig {
+  credentialId: string;
+  template: Record<string, string>;
+}
+
 const initialEdges: Edge[] = [];
+
+// Define custom node types
+const nodeTypes = {
+  custom: CustomNode,
+};
 
 const WorkflowEditor = () => {
   const navigate = useNavigate();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [nodeSelectorOpen, setNodeSelectorOpen] = useState(false);
+  const [nodeConfigOpen, setNodeConfigOpen] = useState(false);
+  const [selectedNodeForConfig, setSelectedNodeForConfig] =
+    useState<Node | null>(null);
   const { workflowId } = useParams();
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
       setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes],
+    [setNodes]
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
       setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges],
+    [setEdges]
   );
 
   const onConnect = useCallback(
     (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges],
+    [setEdges]
+  );
+
+  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    // Only show configuration for configurable nodes
+    const configurableNodeTypes = ["telegram", "email"];
+    const nodeType = node.data.nodeType as string;
+
+    if (configurableNodeTypes.includes(nodeType)) {
+      setSelectedNodeForConfig(node);
+      setNodeConfigOpen(true);
+    }
+  }, []);
+
+  const handleNodeConfigSave = useCallback(
+    (config: NodeConfig) => {
+      if (!selectedNodeForConfig) return;
+
+      setNodes((nodes) =>
+        nodes.map((node) =>
+          node.id === selectedNodeForConfig.id
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  config,
+                  configured: true,
+                },
+              }
+            : node
+        )
+      );
+
+      toast({
+        title: "Success",
+        description: `${selectedNodeForConfig.data.nodeType} node configured successfully`,
+      });
+
+      setSelectedNodeForConfig(null);
+    },
+    [selectedNodeForConfig]
   );
 
   const addNodeFromSelector = useCallback(
@@ -79,7 +142,7 @@ const WorkflowEditor = () => {
         };
       } else {
         nodeData = {
-          label: `${nodeType.icon} ${nodeType.name}`,
+          label: nodeType.name,
           nodeType: nodeType.type,
           icon: nodeType.icon,
           description: nodeType.description,
@@ -88,16 +151,11 @@ const WorkflowEditor = () => {
 
       const newNode: Node = {
         id: newNodeId,
-        type: "default",
+        type: "custom",
         data: nodeData,
         position: {
           x: 300 + nodes.length * 120,
           y: 150 + (nodes.length % 3) * 100,
-        },
-        className: "!bg-card !border-border !text-foreground shadow-sm",
-        style: {
-          minWidth: 150,
-          borderRadius: "8px",
         },
       };
 
@@ -105,7 +163,7 @@ const WorkflowEditor = () => {
 
       console.log(`Added ${nodeType.name} node to workflow`);
     },
-    [nodes, setNodes],
+    [nodes, setNodes]
   );
 
   const handleExecuteWorkflow = async () => {
@@ -129,18 +187,28 @@ const WorkflowEditor = () => {
   };
 
   const handleSaveWorkflow = async () => {
-    const backendNodes = {};
+    const backendNodes: Record<
+      string,
+      Node & { config?: NodeConfig; nodeType?: string }
+    > = {};
     for (const node of nodes) {
-      backendNodes[node.id] = node;
+      backendNodes[node.id] = {
+        ...node,
+        // Include the node configuration in the saved data
+        config: node.data.config,
+        nodeType: node.data.nodeType,
+      };
     }
-    const backendConnections = {};
+    const backendConnections: Record<string, string[]> = {};
     for (const edge of edges) {
       const sourceId = edge.source;
       const targetId = edge.target;
-      if (!backendConnections[sourceId]) {
-        backendConnections[sourceId] = [];
+      if (sourceId && targetId) {
+        if (!backendConnections[sourceId]) {
+          backendConnections[sourceId] = [];
+        }
+        backendConnections[sourceId].push(targetId);
       }
-      backendConnections[sourceId].push(targetId);
     }
     const workflowData = {
       title: "My new Workflow",
@@ -172,23 +240,23 @@ const WorkflowEditor = () => {
       workflowService.getWorkflowById(workflowId).then((data) => {
         if (data && data.nodes) {
           const reactFlowNodes = Object.entries(data.nodes)
-            .map(([nodeId, nodeData]: [string, any], index) => {
-              if (!nodeData) {
+            .map(([nodeId, nodeData]: [string, unknown], index) => {
+              if (!nodeData || typeof nodeData !== "object") {
                 return null;
               }
+
+              const typedNodeData = nodeData as Record<string, unknown>;
               return {
-                id: nodeData.id || nodeId,
-                type: "default",
-                data: nodeData.data || nodeData,
-                position: nodeData.position || { x: 100 + index * 200, y: 100 },
-                className: "!bg-card !border-border !text-foreground shadow-sm",
-                style: {
-                  minWidth: 150,
-                  borderRadius: "8px",
-                },
+                id: (typedNodeData.id as string) || nodeId,
+                type: "custom",
+                data: typedNodeData.data || typedNodeData,
+                position: (typedNodeData.position as {
+                  x: number;
+                  y: number;
+                }) || { x: 100 + index * 200, y: 100 },
               };
             })
-            .filter(Boolean);
+            .filter(Boolean) as Node[];
           const reactFlowEdges = [];
           for (const sourceId in data.connections) {
             const targets = data.connections[sourceId];
@@ -252,6 +320,8 @@ const WorkflowEditor = () => {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeClick={handleNodeClick}
+          nodeTypes={nodeTypes}
           className="bg-background"
           proOptions={{ hideAttribution: true }}
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
@@ -293,6 +363,17 @@ const WorkflowEditor = () => {
           />
         </div>
       </div>
+
+      {/* Node Configuration Dialog */}
+      {selectedNodeForConfig && (
+        <NodeConfigurationDialog
+          open={nodeConfigOpen}
+          onOpenChange={setNodeConfigOpen}
+          nodeType={selectedNodeForConfig.data.nodeType as string}
+          onSave={handleNodeConfigSave}
+          initialConfig={selectedNodeForConfig.data.config}
+        />
+      )}
     </div>
   );
 };
