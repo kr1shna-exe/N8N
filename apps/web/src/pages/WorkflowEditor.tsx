@@ -1,7 +1,7 @@
-import { CustomNode } from "@/components/custom-node";
 import { NodeConfigurationDialog } from "@/components/node-configuration-dialog";
 import { NodeSelector } from "@/components/node-selector";
 import { Button } from "@/components/ui/button";
+import { CustomNode } from "@/components/custom-node";
 import { toast } from "@/hooks/use-toast";
 import { executionService } from "@/lib/executions";
 import type { NodeType } from "@/lib/nodes";
@@ -19,6 +19,7 @@ import "@xyflow/react/dist/style.css";
 import { ArrowLeft, Play, Plus, Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+
 interface Node {
   id: string;
   type?: string;
@@ -44,18 +45,10 @@ interface Edge {
   target?: string;
 }
 
-interface NodeConfig {
-  credentialId: string;
-  template: Record<string, string>;
-}
-
 const initialEdges: Edge[] = [];
-
-// Define custom node types
 const nodeTypes = {
   custom: CustomNode,
 };
-
 const WorkflowEditor = () => {
   const navigate = useNavigate();
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -65,24 +58,25 @@ const WorkflowEditor = () => {
   const [selectedNodeForConfig, setSelectedNodeForConfig] =
     useState<Node | null>(null);
   const { workflowId } = useParams();
+
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
       setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes]
+    [setNodes],
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
       setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges]
+    [setEdges],
   );
 
   const onConnect = useCallback(
     (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges]
+    [setEdges],
   );
 
-  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     // Only show configuration for configurable nodes
     const configurableNodeTypes = ["telegram", "email"];
     const nodeType = node.data.nodeType as string;
@@ -94,7 +88,7 @@ const WorkflowEditor = () => {
   }, []);
 
   const handleNodeConfigSave = useCallback(
-    (config: NodeConfig) => {
+    (config: { credentialId: string; template: Record<string, string> }) => {
       if (!selectedNodeForConfig) return;
 
       setNodes((nodes) =>
@@ -108,8 +102,8 @@ const WorkflowEditor = () => {
                   configured: true,
                 },
               }
-            : node
-        )
+            : node,
+        ),
       );
 
       toast({
@@ -119,7 +113,7 @@ const WorkflowEditor = () => {
 
       setSelectedNodeForConfig(null);
     },
-    [selectedNodeForConfig]
+    [selectedNodeForConfig],
   );
 
   const addNodeFromSelector = useCallback(
@@ -157,13 +151,18 @@ const WorkflowEditor = () => {
           x: 300 + nodes.length * 120,
           y: 150 + (nodes.length % 3) * 100,
         },
+        className: "!bg-card !border-border !text-foreground shadow-sm",
+        style: {
+          minWidth: 150,
+          borderRadius: "8px",
+        },
       };
 
       setNodes((nds) => [...nds, newNode]);
 
       console.log(`Added ${nodeType.name} node to workflow`);
     },
-    [nodes, setNodes]
+    [nodes, setNodes],
   );
 
   const handleExecuteWorkflow = async () => {
@@ -187,16 +186,15 @@ const WorkflowEditor = () => {
   };
 
   const handleSaveWorkflow = async () => {
-    const backendNodes: Record<
-      string,
-      Node & { config?: NodeConfig; nodeType?: string }
-    > = {};
+    const backendNodes: Record<string, any> = {};
     for (const node of nodes) {
       backendNodes[node.id] = {
-        ...node,
-        // Include the node configuration in the saved data
-        config: node.data.config,
-        nodeType: node.data.nodeType,
+        id: node.id,
+        type: node.data.nodeType,
+        title: node.data.label,
+        credentials: node.data.config?.credentialId,
+        data: node.data,
+        position: node.position,
       };
     }
     const backendConnections: Record<string, string[]> = {};
@@ -240,22 +238,31 @@ const WorkflowEditor = () => {
       workflowService.getWorkflowById(workflowId).then((data) => {
         if (data && data.nodes) {
           const reactFlowNodes = Object.entries(data.nodes)
-            .map(([nodeId, nodeData]: [string, unknown], index) => {
-              if (!nodeData || typeof nodeData !== "object") {
-                return null;
-              }
-
-              const typedNodeData = nodeData as Record<string, unknown>;
-              return {
-                id: (typedNodeData.id as string) || nodeId,
-                type: "custom",
-                data: typedNodeData.data || typedNodeData,
-                position: (typedNodeData.position as {
-                  x: number;
-                  y: number;
-                }) || { x: 100 + index * 200, y: 100 },
-              };
-            })
+            .map(
+              (
+                [nodeId, nodeData]: [string, Record<string, unknown>],
+                index,
+              ) => {
+                if (!nodeData) {
+                  return null;
+                }
+                return {
+                  id: nodeData.id || nodeId,
+                  type: "custom",
+                  data: nodeData.data || nodeData,
+                  position: nodeData.position || {
+                    x: 100 + index * 200,
+                    y: 100,
+                  },
+                  className:
+                    "!bg-card !border-border !text-foreground shadow-sm",
+                  style: {
+                    minWidth: 150,
+                    borderRadius: "8px",
+                  },
+                };
+              },
+            )
             .filter(Boolean) as Node[];
           const reactFlowEdges = [];
           for (const sourceId in data.connections) {
@@ -320,7 +327,7 @@ const WorkflowEditor = () => {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onNodeClick={handleNodeClick}
+          onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
           className="bg-background"
           proOptions={{ hideAttribution: true }}
@@ -330,6 +337,16 @@ const WorkflowEditor = () => {
           attributionPosition="bottom-left"
           fitView
         ></ReactFlow>
+        {/* Node Configuration Dialog */}
+        {selectedNodeForConfig && (
+          <NodeConfigurationDialog
+            open={nodeConfigOpen}
+            onOpenChange={setNodeConfigOpen}
+            nodeType={selectedNodeForConfig.data.nodeType as string}
+            onSave={handleNodeConfigSave}
+            initialConfig={selectedNodeForConfig.data.config}
+          />
+        )}
 
         {nodes.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
@@ -363,17 +380,6 @@ const WorkflowEditor = () => {
           />
         </div>
       </div>
-
-      {/* Node Configuration Dialog */}
-      {selectedNodeForConfig && (
-        <NodeConfigurationDialog
-          open={nodeConfigOpen}
-          onOpenChange={setNodeConfigOpen}
-          nodeType={selectedNodeForConfig.data.nodeType as string}
-          onSave={handleNodeConfigSave}
-          initialConfig={selectedNodeForConfig.data.config}
-        />
-      )}
     </div>
   );
 };

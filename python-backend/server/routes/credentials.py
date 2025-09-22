@@ -1,4 +1,5 @@
 from uuid import UUID
+
 from db.database import get_session
 from db.models.models import Credentials, User
 from db.models.schemas import CredentialsSchema
@@ -52,7 +53,32 @@ async def get_credentials(
         for cred in credentials
     ]
     return {
-        "message": "Successfuly fetched credentials",
+        "message": "Successfully fetched credentials",
+        "credentials": credentials_list,
+    }
+
+
+@router.get("/credentials/{platform}")
+async def get_credentials_by_platform(
+    platform: str,
+    current_user: User = Depends(authenticate_user),
+    db: Session = Depends(get_session),
+):
+    statement = select(Credentials).where(
+        Credentials.user_id == current_user.id, Credentials.platform == platform
+    )
+    credentials = db.exec(statement).all()
+    credentials_list = [
+        {
+            "id": str(cred.id),
+            "title": cred.title,
+            "platform": cred.platform,
+            "data": cred.data,
+        }
+        for cred in credentials
+    ]
+    return {
+        "message": "Successfully fetched credentials",
         "credentials": credentials_list,
     }
 

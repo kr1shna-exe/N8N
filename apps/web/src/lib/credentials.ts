@@ -92,6 +92,17 @@ export const credentialsApi = {
     );
     return handleResponse(response);
   },
+
+  getCredentialsByPlatform: async (platform: string) => {
+    const response = await fetch(`${API_URL}/api/user/credentials/${platform}`, {
+      method: "GET",
+      headers: {
+        authorization: `Bearer ${getAuthToken()}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return handleResponse(response);
+  },
 };
 
 export const mapToBackendCredential = (frontendData: {

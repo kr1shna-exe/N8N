@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { credentialsApi } from "@/lib/credentials";
 import { useCallback, useEffect, useState } from "react";
 
 interface Credential {
@@ -69,11 +70,7 @@ export function NodeConfigurationDialog({
   const loadCredentials = useCallback(async () => {
     setLoadingCredentials(true);
     try {
-      const response = await fetch("http://localhost:8000/api/credentials");
-      if (!response.ok) {
-        throw new Error("Failed to load credentials");
-      }
-      const data = await response.json();
+      const data = await credentialsApi.getCredentials();
 
       // Filter credentials based on node type
       const platformMap: Record<string, string> = {
@@ -81,15 +78,18 @@ export function NodeConfigurationDialog({
         email: "ResendEmail",
       };
 
-      const filteredCredentials = data.credentials.filter(
+      const filteredCredentials = (data.credentials || []).filter(
         (cred: Credential) => cred.platform === platformMap[nodeType]
       );
 
       setCredentials(filteredCredentials);
+      console.log("Loaded credentials for", nodeType, ":", filteredCredentials);
     } catch (error) {
+      console.error("Failed to load credentials:", error);
       toast({
         title: "Error",
-        description: "Failed to load credentials",
+        description:
+          "Failed to load credentials. Please check if you're logged in.",
         variant: "destructive",
       });
     } finally {
