@@ -55,7 +55,7 @@ const App = () => (
               }
             />
             <Route
-              path="/workflow-editor"
+              path="/workflow-editor/:workflowId?"
               element={
                 <ProtectedRoute>
                   <WorkflowEditor />

@@ -12,7 +12,7 @@ const handleResponse = async (res: Response) => {
 export const workflowService = {
   async getWorkflowById(workflowId: string) {
     try {
-      const response = await fetch(`${API_URL}/api/workflow/${workflowId}`, {
+      const response = await fetch(`${API_URL}/api/workflows/${workflowId}`, {
         method: "GET",
         headers: {
           authorization: `Bearer ${getAuthToken()}`,
@@ -22,6 +22,50 @@ export const workflowService = {
       return handleResponse(response);
     } catch (error) {
       console.log("Error occured while getting workflow: ", error);
+    }
+  },
+  async saveWorkflow(workflowData: any) {
+    try {
+      const response = await fetch(`${API_URL}/api/workflows`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${getAuthToken()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(workflowData),
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.log("Error while saving workflow: ", error);
+    }
+  },
+  async getWorkflows() {
+    try {
+      const response = await fetch(`${API_URL}/api/workflows`, {
+        method: "GET",
+        headers: {
+          authorization: `Bearer ${getAuthToken()}`,
+          "Content-Type": "application/json",
+        },
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.log("Error while fetchign workflows: ", error);
+    }
+  },
+  async updateWorkflow(workflowId: string, workflowData: any) {
+    try {
+      const response = await fetch(`${API_URL}/api/workflows/${workflowId}`, {
+        method: "PUT",
+        headers: {
+          authorization: `Bearer ${getAuthToken()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(workflowData),
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.log("Error while updating workflows");
     }
   },
 };

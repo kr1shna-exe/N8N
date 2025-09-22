@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkflowCards } from "@/components/workflow-cards";
 import { WorkflowTabs } from "@/components/workflow-tabs";
+import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import {
   credentialsApi,
@@ -11,6 +12,7 @@ import {
   mapToBackendCredential,
 } from "@/lib/credentials";
 import { executionService } from "@/lib/executions";
+import { workflowService } from "@/lib/workflows";
 import { CheckCircle, Clock, Loader, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -22,14 +24,30 @@ const Personal = () => {
   const [loading, setLoading] = useState(false);
   const [executions, setExecutions] = useState<any[]>([]);
   const [executionsLoading, setExecutionsLoading] = useState(false);
-
+  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [workflowsLoading, setWorkflowsLoading] = useState(false);
+  const navigate = useNavigate();
   useEffect(() => {
     if (activeTab === "credentials") {
       loadCredentials();
     } else if (activeTab === "executions") {
       loadExecutions();
+    } else if (activeTab === "workflows") {
+      loadWorkflows();
     }
   }, [activeTab]);
+
+  const loadWorkflows = async () => {
+    try {
+      setWorkflowsLoading(true);
+      const response = await workflowService.getWorkflows();
+      setWorkflows(response);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to load workflows" });
+    } finally {
+      setWorkflowsLoading(false);
+    }
+  };
 
   const loadExecutions = async () => {
     try {
@@ -52,7 +70,7 @@ const Personal = () => {
       setLoading(true);
       const response = await credentialsApi.getCredentials();
       const frontendCredentials = response.credentials.map(
-        mapFromBackendCredential
+        mapFromBackendCredential,
       );
       setCredentials(frontendCredentials);
     } catch (error) {
@@ -72,7 +90,7 @@ const Personal = () => {
       const response =
         await credentialsApi.createCredentials(backendCredential);
       const frontendCredential = mapFromBackendCredential(
-        response.newCredentials
+        response.newCredentials,
       );
       setCredentials([...credentials, frontendCredential]);
 
@@ -110,7 +128,7 @@ const Personal = () => {
   const getStatusIcon = (
     status: boolean,
     tasks_done: number,
-    total_tasks: number
+    total_tasks: number,
   ) => {
     if (status) {
       return <CheckCircle className="h-5 w-5 text-green-500" />;
@@ -124,7 +142,7 @@ const Personal = () => {
   const getStatusText = (
     status: boolean,
     tasks_done: number,
-    total_tasks: number
+    total_tasks: number,
   ) => {
     if (status) return "Completed";
     if (tasks_done > 0) return "Running";
@@ -143,16 +161,42 @@ const Personal = () => {
       <WorkflowTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === "workflows" && (
-        <div className="space-y-8">
-          <div className="text-center space-y-4">
-            <h2 className="text-xl font-medium text-foreground">
-              👋 Welcome Krishna!
-            </h2>
-            <p className="text-muted-foreground">Create your first workflow</p>
-          </div>
-          <div className="flex justify-center">
-            <WorkflowCards />
-          </div>
+        <div className="space-y-4">
+          {workflowsLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading workflows...</p>
+            </div>
+          ) : workflows.length === 0 ? (
+            <div className="text-center py-12">
+              <h3 className="text-lg font-medium text-foreground mb-2">
+                No workflows yet
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Create your first workflow to get started
+              </p>
+              <WorkflowCards />
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {workflows.map((workflow) => (
+                <Card
+                  key={workflow.id}
+                  className="hover:shadow-md transition-shadow"
+                >
+                  <CardHeader>
+                    <CardTitle>{workflow.title}</CardTitle>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        navigate(`/workflow-editor/${workflow.id}`)
+                      }
+                    ></Button>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -283,7 +327,7 @@ const Personal = () => {
                         {getStatusIcon(
                           execution.status,
                           execution.tasks_done,
-                          execution.total_tasks
+                          execution.total_tasks,
                         )}
                         <div>
                           <CardTitle className="text-base">
@@ -307,7 +351,7 @@ const Personal = () => {
                           {getStatusText(
                             execution.status,
                             execution.tasks_done,
-                            execution.total_tasks
+                            execution.total_tasks,
                           )}
                         </Badge>
                         <div className="text-sm text-muted-foreground">

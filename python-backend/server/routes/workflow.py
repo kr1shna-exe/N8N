@@ -1,16 +1,18 @@
 from typing import Any, Dict
-
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from uuid import UUID
 
 from db.database import get_session
-from db.models.models import Execution, ExecutionStatus, Workflow
+from db.models.models import Execution, ExecutionStatus, User, Workflow
+from db.models.schemas import WorkflowCreate
+from fastapi import APIRouter, Depends, HTTPException
 from server.redis.redis import addToQueue
+from server.routes.user import authenticate_user
+from sqlmodel import Session, select
 
 router = APIRouter()
 
 
-@router.post("/workflow/{workflow_id}")
+@router.post("/workflows/{workflow_id}")
 async def execute_workflow(
     workflow_id: str, context: Dict[str, Any], db: Session = Depends(get_session)
 ):
@@ -25,7 +27,7 @@ async def execute_workflow(
         connections: Dict[str, Any] = workflow.connections
         total_tasks = len(nodes)
         execution = Execution(
-            workflow_id=workflow_id,
+            workflow_id=UUID(workflow_id),
             status=ExecutionStatus.RUNNING,
             tasks_done=0,
             total_tasks=total_tasks,
@@ -62,7 +64,17 @@ async def execute_workflow(
         raise HTTPException(status_code=400, detail="Error occured")
 
 
-@router.get("/workflow/{workflow_id}")
+@router.get("/workflows")
+async def get_workflows(db: Session = Depends(get_session)):
+    try:
+        workflows = db.exec(select(Workflow)).all()
+        return workflows
+    except Exception as e:
+        print(f"Error getting workflows: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@router.get("/workflows/{workflow_id}")
 async def get_workflow(workflow_id: str, db: Session = Depends(get_session)):
     try:
         statement = select(Workflow).where(Workflow.id == workflow_id)
@@ -72,6 +84,56 @@ async def get_workflow(workflow_id: str, db: Session = Depends(get_session)):
         return workflow
     except Exception as e:
         print(f"Error while fetching the workflow: {e}")
+
+
+@router.post("/workflows")
+async def create_workflow(
+    workflow: WorkflowCreate,
+    db: Session = Depends(get_session),
+    user: User = Depends(authenticate_user),
+):
+    try:
+        new_workflow = Workflow(
+            title=workflow.title,
+            nodes=workflow.nodes,
+            connections=workflow.connections,
+            trigger_type=workflow.trigger_type,
+            user_id=user.id,
+            webhook_id=None,
+        )
+        db.add(new_workflow)
+        db.commit()
+        db.refresh(new_workflow)
+        return new_workflow
+    except Exception as e:
+        print(f"Error while adding workflow to db: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@router.put("/workflows/{workflow_id}")
+async def update_worflow(
+    workflow_id: str,
+    workflow_data: WorkflowCreate,
+    db: Session = Depends(get_session),
+    user: User = Depends(authenticate_user),
+):
+    try:
+        workflow = db.get(Workflow, workflow_id)
+        if not workflow:
+            raise HTTPException(status_code=400, detail="No workflow found")
+        if workflow.user_id != user.id:
+            raise HTTPException(status_code=400, detail="User is not authorized")
+        workflow.title = workflow_data.title
+        workflow.nodes = {
+            node_id: node.dict() for node_id, node in workflow_data.nodes.items()
+        }
+        workflow.connections = workflow_data.connections
+        workflow.trigger_type = workflow_data.trigger_type
+        db.add(workflow)
+        db.commit()
+        db.refresh(workflow)
+    except Exception as e:
+        print(f"Error while updating workflow: {e}")
 
 
 def find_starting_node(nodes: Dict[str, Any], connections: Dict[str, Any]):

@@ -4,7 +4,7 @@ import asyncio
 from typing import Any
 from workers.nodes.runNode.runner import runNode
 from sqlmodel import Session
-from db.database import get_db_session
+from db.database import get_session
 from db.models.models import Execution, ExecutionStatus, Workflow
 from server.redis.redis import addToQueue, getFromQueue
 
@@ -45,55 +45,53 @@ async def process_jobs():
                 continue
 
             job_type = job.get("type")
-            db = get_db_session()
+            with next(get_session()) as db:
+                if job_type == "form":
+                    try:
+                        execution = db.get(Execution, job["data"]["executionId"])
+                        if execution:
+                            execution.status = ExecutionStatus.PAUSED
+                            execution.paused_node_id = job["data"]["nodeId"]
+                            db.add(execution)
+                            db.commit()
+                            print(f"Execution {execution.id} paused for form input at node {job['data']['nodeId']}.")
+                    finally:
+                        db.close()
+                    continue
 
-            if job_type == "form":
+                node = {
+                        "type": job_type,
+                        "template": job["data"]["nodeData"].get("template"),
+                        "credentialId": job["data"].get("credentialId")
+                    }
+                node_result = await runNode(node, job["data"].get("context", {}))
+                
                 try:
-                    execution = db.get(Execution, job["data"]["executionId"])
-                    if execution:
-                        execution.status = ExecutionStatus.PAUSED
-                        execution.paused_node_id = job["data"]["nodeId"]
-                        db.add(execution)
-                        db.commit()
-                        print(f"Execution {execution.id} paused for form input at node {job['data']['nodeId']}.")
+                    await update_execution(job["data"]["executionId"], job["data"]["nodeId"], node_result,db)
+                    workflow = db.get(Workflow, job["data"]["workflowId"])
+                    if workflow and job["data"].get("connections"):
+                            nodes = workflow.nodes or {}
+                            connections = workflow.connections or {}
+                            updated_context = {**job["data"].get("context", {}), **(node_result or {})}
+                            for next_node_id in job["data"]["connections"]:
+                                next_node_data = nodes.get(next_node_id)
+                                if not next_node_data:
+                                    continue
+                                next_job = {
+                                    "id": f"{next_node_id}-{job['data']['executionId']}",
+                                    "type": next_node_data.get("type", "").lower(),
+                                    "data": {
+                                        **job["data"],
+                                        "nodeId": next_node_id,
+                                        "nodeData": next_node_data,
+                                        "credentialId": next_node_data.get("credentials"),
+                                        "context": updated_context,
+                                        "connections": connections.get(next_node_id, []),
+                                    }
+                                }
+                                await addToQueue(next_job)
                 finally:
                     db.close()
-                continue
-
-            node = {
-                    "type": job_type,
-                    "template": job["data"]["nodeData"].get("template"),
-                    "credentialId": job["data"].get("credentialId")
-                }
-            node_result = await runNode(node, job["data"].get("context", {}))
-            
-            try:
-                await update_execution(job["data"]["executionId"], job["data"]["nodeId"], node_result,db)
-                workflow = db.get(Workflow, job["data"]["workflowId"])
-                if workflow and job["data"].get("connections"):
-                        nodes = workflow.nodes or {}
-                        connections = workflow.connections or {}
-                        updated_context = {**job["data"].get("context", {}), **(node_result or {})}
-                        for next_node_id in job["data"]["connections"]:
-                            next_node_data = nodes.get(next_node_id)
-                            if not next_node_data:
-                                continue
-                            next_job = {
-                                "id": f"{next_node_id}-{job['data']['executionId']}",
-                                "type": next_node_data.get("type", "").lower(),
-                                "data": {
-                                    **job["data"],
-                                    "nodeId": next_node_id,
-                                    "nodeData": next_node_data,
-                                    "credentialId": next_node_data.get("credentials"),
-                                    "context": updated_context,
-                                    "connections": connections.get(next_node_id, []),
-                                }
-                            }
-                            await addToQueue(next_job)
-            finally:
-                db.close()
         except Exception as exe:
             print(f"Error occured while processing the job: {exe}")
 asyncio.run(process_jobs())
-

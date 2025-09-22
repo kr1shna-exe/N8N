@@ -1,6 +1,8 @@
 import { NodeSelector } from "@/components/node-selector";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 import type { NodeType } from "@/lib/nodes";
+import { workflowService } from "@/lib/workflows";
 import {
   addEdge,
   applyEdgeChanges,
@@ -12,9 +14,9 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { ArrowLeft, Play, Plus, Save } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { useParams } from "react-router-dom";
 interface Node {
   id: string;
   type?: string;
@@ -37,7 +39,7 @@ const WorkflowEditor = () => {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [nodeSelectorOpen, setNodeSelectorOpen] = useState(false);
-
+  const { workflowId } = useParams();
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
       setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -107,11 +109,7 @@ const WorkflowEditor = () => {
   const handleSaveWorkflow = async () => {
     const backendNodes = {};
     for (const node of nodes) {
-      backendNodes[node.id] = {
-        id: node.id,
-        type: node.data.nodeType,
-        data: node.data,
-      };
+      backendNodes[node.id] = node;
     }
     const backendConnections = {};
     for (const edge of edges) {
@@ -128,8 +126,68 @@ const WorkflowEditor = () => {
       connections: backendConnections,
       trigger_type: "Manual",
     };
-    console.log("Workflow data to be sent to backend: ", workflowData);
+    try {
+      if (workflowId) {
+        await workflowService.updateWorkflow(workflowId, workflowData);
+        toast({
+          title: "Success",
+          description: "Workflow updated successfully",
+        });
+      } else {
+        await workflowService.saveWorkflow(workflowData);
+        toast({
+          title: "Success",
+          description: "Workflow successfully created",
+        });
+      }
+    } catch (error) {
+      toast({ title: "failed", description: "Failed to create workflow" });
+    }
   };
+
+  useEffect(() => {
+    if (workflowId) {
+      workflowService.getWorkflowById(workflowId).then((data) => {
+        if (data && data.nodes) {
+          const reactFlowNodes = Object.entries(data.nodes)
+            .map(([nodeId, nodeData]: [string, any], index) => {
+              if (!nodeData) {
+                return null;
+              }
+              return {
+                id: nodeData.id || nodeId,
+                type: "default",
+                data: nodeData.data || nodeData,
+                position: nodeData.position || { x: 100 + index * 200, y: 100 },
+                className: "!bg-card !border-border !text-foreground shadow-sm",
+                style: {
+                  minWidth: 150,
+                  borderRadius: "8px",
+                },
+              };
+            })
+            .filter(Boolean);
+          const reactFlowEdges = [];
+          for (const sourceId in data.connections) {
+            const targets = data.connections[sourceId];
+            if (Array.isArray(targets)) {
+              for (const targetId of targets) {
+                reactFlowEdges.push({
+                  id: `${sourceId}-${targetId}`,
+                  source: sourceId,
+                  target: targetId,
+                });
+              }
+            } else {
+              console.error("targets is not an array for sourceId:", sourceId);
+            }
+          }
+          setNodes(reactFlowNodes);
+          setEdges(reactFlowEdges);
+        }
+      });
+    }
+  }, [workflowId]);
 
   return (
     <div className="h-screen w-full bg-background flex flex-col">
