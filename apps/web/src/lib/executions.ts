@@ -58,4 +58,19 @@ export const executionService = {
       console.log("Error while resuming the workflow: ", error);
     }
   },
+  async executeWorkflow(workflowId: string, context: any) {
+    try {
+      const response = await fetch(`${API_URL}/api/workflows/${workflowId}`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${getAuthToken()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(context),
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.log("Error while executing workflow: ", error);
+    }
+  },
 };

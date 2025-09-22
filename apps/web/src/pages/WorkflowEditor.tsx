@@ -1,8 +1,10 @@
 import { NodeSelector } from "@/components/node-selector";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { executionService } from "@/lib/executions";
 import type { NodeType } from "@/lib/nodes";
 import { workflowService } from "@/lib/workflows";
+import { Description } from "@radix-ui/react-alert-dialog";
 import {
   addEdge,
   applyEdgeChanges,
@@ -105,6 +107,26 @@ const WorkflowEditor = () => {
     },
     [nodes, setNodes],
   );
+
+  const handleExecuteWorkflow = async () => {
+    if (workflowId) {
+      const context = {
+        name: "JohnDoe",
+        email: "Johndoe@example.com",
+      };
+      try {
+        await executionService.executeWorkflow(workflowId, context);
+        toast({ title: "Success", description: "Workflow execution started" });
+      } catch (error) {
+        toast({ title: "Failed", description: "Workflow execution failed" });
+      }
+    } else {
+      toast({
+        title: "Error",
+        description: "Save the workflow before executing",
+      });
+    }
+  };
 
   const handleSaveWorkflow = async () => {
     const backendNodes = {};
@@ -212,7 +234,11 @@ const WorkflowEditor = () => {
             <Save className="w-4 h-4 mr-2" />
             Save
           </Button>
-          <Button size="sm" className="bg-primary hover:bg-primary/90">
+          <Button
+            size="sm"
+            onClick={handleExecuteWorkflow}
+            className="bg-primary hover:bg-primary/90"
+          >
             <Play className="w-4 h-4 mr-2" />
             Execute
           </Button>
