@@ -16,7 +16,6 @@ import {
   Plus,
   Search,
   Settings,
-  Smartphone,
   Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -132,7 +131,7 @@ export function NodeSelector({
   const getNodeIcon = (node: NodeType) => {
     switch (node.type) {
       case "telegram":
-        return <Smartphone className="w-5 h-5" />;
+        return "📱";
       case "email":
         return "📧";
       case "form":

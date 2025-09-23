@@ -1,7 +1,7 @@
+import { CustomNode } from "@/components/custom-node";
 import { NodeConfigurationDialog } from "@/components/node-configuration-dialog";
 import { NodeSelector } from "@/components/node-selector";
 import { Button } from "@/components/ui/button";
-import { CustomNode } from "@/components/custom-node";
 import { toast } from "@/hooks/use-toast";
 import { executionService } from "@/lib/executions";
 import type { NodeType } from "@/lib/nodes";
@@ -57,28 +57,29 @@ const WorkflowEditor = () => {
   const [nodeConfigOpen, setNodeConfigOpen] = useState(false);
   const [selectedNodeForConfig, setSelectedNodeForConfig] =
     useState<Node | null>(null);
+  const [workflowTitle, setWorkflowTitle] = useState("Untitled Workflow");
   const { workflowId } = useParams();
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
       setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes],
+    [setNodes]
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
       setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges],
+    [setEdges]
   );
 
   const onConnect = useCallback(
     (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges],
+    [setEdges]
   );
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     // Only show configuration for configurable nodes
-    const configurableNodeTypes = ["telegram", "email"];
+    const configurableNodeTypes = ["telegram", "email", "form"];
     const nodeType = node.data.nodeType as string;
 
     if (configurableNodeTypes.includes(nodeType)) {
@@ -102,8 +103,8 @@ const WorkflowEditor = () => {
                   configured: true,
                 },
               }
-            : node,
-        ),
+            : node
+        )
       );
 
       toast({
@@ -113,7 +114,7 @@ const WorkflowEditor = () => {
 
       setSelectedNodeForConfig(null);
     },
-    [selectedNodeForConfig],
+    [selectedNodeForConfig]
   );
 
   const addNodeFromSelector = useCallback(
@@ -162,7 +163,7 @@ const WorkflowEditor = () => {
 
       console.log(`Added ${nodeType.name} node to workflow`);
     },
-    [nodes, setNodes],
+    [nodes, setNodes]
   );
 
   const handleExecuteWorkflow = async () => {
@@ -186,7 +187,7 @@ const WorkflowEditor = () => {
   };
 
   const handleSaveWorkflow = async () => {
-    const backendNodes: Record<string, any> = {};
+    const backendNodes: Record<string, unknown> = {};
     for (const node of nodes) {
       backendNodes[node.id] = {
         id: node.id,
@@ -209,7 +210,7 @@ const WorkflowEditor = () => {
       }
     }
     const workflowData = {
-      title: "My new Workflow",
+      title: workflowTitle,
       nodes: backendNodes,
       connections: backendConnections,
       trigger_type: "Manual",
@@ -236,51 +237,62 @@ const WorkflowEditor = () => {
   useEffect(() => {
     if (workflowId) {
       workflowService.getWorkflowById(workflowId).then((data) => {
-        if (data && data.nodes) {
-          const reactFlowNodes = Object.entries(data.nodes)
-            .map(
-              (
-                [nodeId, nodeData]: [string, Record<string, unknown>],
-                index,
-              ) => {
-                if (!nodeData) {
-                  return null;
-                }
-                return {
-                  id: nodeData.id || nodeId,
-                  type: "custom",
-                  data: nodeData.data || nodeData,
-                  position: nodeData.position || {
-                    x: 100 + index * 200,
-                    y: 100,
-                  },
-                  className:
-                    "!bg-card !border-border !text-foreground shadow-sm",
-                  style: {
-                    minWidth: 150,
-                    borderRadius: "8px",
-                  },
-                };
-              },
-            )
-            .filter(Boolean) as Node[];
-          const reactFlowEdges = [];
-          for (const sourceId in data.connections) {
-            const targets = data.connections[sourceId];
-            if (Array.isArray(targets)) {
-              for (const targetId of targets) {
-                reactFlowEdges.push({
-                  id: `${sourceId}-${targetId}`,
-                  source: sourceId,
-                  target: targetId,
-                });
-              }
-            } else {
-              console.error("targets is not an array for sourceId:", sourceId);
-            }
+        if (data) {
+          // Set workflow title
+          if (data.title) {
+            setWorkflowTitle(data.title);
           }
-          setNodes(reactFlowNodes);
-          setEdges(reactFlowEdges);
+
+          // Load nodes if available
+          if (data.nodes) {
+            const reactFlowNodes = Object.entries(data.nodes)
+              .map(
+                (
+                  [nodeId, nodeData]: [string, Record<string, unknown>],
+                  index
+                ) => {
+                  if (!nodeData) {
+                    return null;
+                  }
+                  return {
+                    id: nodeData.id || nodeId,
+                    type: "custom",
+                    data: nodeData.data || nodeData,
+                    position: nodeData.position || {
+                      x: 100 + index * 200,
+                      y: 100,
+                    },
+                    className:
+                      "!bg-card !border-border !text-foreground shadow-sm",
+                    style: {
+                      minWidth: 150,
+                      borderRadius: "8px",
+                    },
+                  };
+                }
+              )
+              .filter(Boolean) as Node[];
+            const reactFlowEdges = [];
+            for (const sourceId in data.connections) {
+              const targets = data.connections[sourceId];
+              if (Array.isArray(targets)) {
+                for (const targetId of targets) {
+                  reactFlowEdges.push({
+                    id: `${sourceId}-${targetId}`,
+                    source: sourceId,
+                    target: targetId,
+                  });
+                }
+              } else {
+                console.error(
+                  "targets is not an array for sourceId:",
+                  sourceId
+                );
+              }
+            }
+            setNodes(reactFlowNodes);
+            setEdges(reactFlowEdges);
+          }
         }
       });
     }
@@ -300,7 +312,7 @@ const WorkflowEditor = () => {
             Back
           </Button>
           <h1 className="text-lg font-semibold text-foreground">
-            Workflow Editor
+            {workflowTitle}
           </h1>
         </div>
 

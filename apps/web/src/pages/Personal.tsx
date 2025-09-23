@@ -2,9 +2,15 @@ import { AddCredentialDialog } from "@/components/add-credential-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { WorkflowCards } from "@/components/workflow-cards";
 import { WorkflowTabs } from "@/components/workflow-tabs";
-import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import {
   credentialsApi,
@@ -13,8 +19,19 @@ import {
 } from "@/lib/credentials";
 import { executionService } from "@/lib/executions";
 import { workflowService } from "@/lib/workflows";
-import { CheckCircle, Clock, Loader, Plus, Trash2 } from "lucide-react";
+import {
+  CheckCircle,
+  Clock,
+  Edit,
+  Filter,
+  Loader,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Personal = () => {
   const [activeTab, setActiveTab] = useState("workflows");
@@ -26,6 +43,7 @@ const Personal = () => {
   const [executionsLoading, setExecutionsLoading] = useState(false);
   const [workflows, setWorkflows] = useState<any[]>([]);
   const [workflowsLoading, setWorkflowsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   useEffect(() => {
     if (activeTab === "credentials") {
@@ -125,6 +143,19 @@ const Personal = () => {
     }
   };
 
+  const handleDeleteWorkflow = async (workflowId: string) => {
+    try {
+      await workflowService.deleteWorkflow(workflowId);
+      setWorkflows(workflows.filter((workflow) => workflow.id !== workflowId));
+      toast({
+        title: "Success",
+        description: "Successfully deleted workflows",
+      });
+    } catch (error) {
+      toast({ title: "Failed", description: "Failed to delete the workflow" });
+    }
+  };
+
   const getStatusIcon = (
     status: boolean,
     tasks_done: number,
@@ -149,6 +180,58 @@ const Personal = () => {
     return "Pending";
   };
 
+  const handleDeleteExecution = async (executionId: string) => {
+    try {
+      // Note: Add proper delete endpoint when backend supports it
+      toast({
+        title: "Not Implemented",
+        description: "Delete execution functionality will be added soon",
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete execution",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditExecution = (executionId: string) => {
+    // Navigate to execution details or edit view
+    toast({
+      title: "Not Implemented",
+      description: "Edit execution functionality will be added soon",
+    });
+  };
+
+  const handleEditWorkflow = (workflowId: string) => {
+    navigate(`/workflow-editor/${workflowId}`);
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "Unknown";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) return "1 day ago";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30)
+      return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? "s" : ""} ago`;
+
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const filteredWorkflows = workflows.filter((workflow) =>
+    workflow.title?.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -161,9 +244,47 @@ const Personal = () => {
       <WorkflowTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === "workflows" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Search and Filter Section */}
+          {/* <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                >
+                  Sort by last updated
+                </Button>
+                <Button variant="ghost" size="sm">
+                  <Filter className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Total {workflows.length}</span>
+              <Badge
+                variant="secondary"
+                className="bg-orange-100 text-orange-800 hover:bg-orange-100"
+              >
+                {workflows.length}
+              </Badge>
+            </div>
+          </div> */}
+
+          {/* Workflows List */}
           {workflowsLoading ? (
             <div className="text-center py-12">
+              <Loader className="w-6 h-6 animate-spin mx-auto mb-4" />
               <p className="text-muted-foreground">Loading workflows...</p>
             </div>
           ) : workflows.length === 0 ? (
@@ -176,25 +297,92 @@ const Personal = () => {
               </p>
               <WorkflowCards />
             </div>
+          ) : filteredWorkflows.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                No workflows found matching "{searchQuery}"
+              </p>
+            </div>
           ) : (
-            <div className="grid gap-4">
-              {workflows.map((workflow) => (
-                <Card
+            <div className="space-y-2">
+              {filteredWorkflows.map((workflow) => (
+                <div
                   key={workflow.id}
-                  className="hover:shadow-md transition-shadow"
+                  className="flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:bg-accent/50 transition-colors group"
                 >
-                  <CardHeader>
-                    <CardTitle>{workflow.title}</CardTitle>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        navigate(`/workflow-editor/${workflow.id}`)
-                      }
-                    ></Button>
-                  </CardHeader>
-                </Card>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-medium text-foreground truncate">
+                      {workflow.title || "Untitled Workflow"}
+                    </h3>
+                    {/* <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                      <span>
+                        Last updated{" "}
+                        {workflow.updated_at
+                          ? formatDate(workflow.updated_at)
+                          : "recently"}
+                      </span>
+                      <span>•</span>
+                      <span>
+                        Created{" "}
+                        {workflow.created_at
+                          ? formatDate(workflow.created_at)
+                          : "recently"}
+                      </span>
+                    </div> */}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {/* <Badge
+                      variant="secondary"
+                      className="bg-green-100 text-green-800 hover:bg-green-100"
+                    >
+                      Active
+                    </Badge> */}
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleEditWorkflow(workflow.id)}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteWorkflow(workflow.id)}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
               ))}
+
+              {/* Pagination */}
+              {/* <div className="flex items-center justify-between pt-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>50/page</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" disabled>
+                    Previous
+                  </Button>
+                  <Button variant="ghost" size="sm" disabled>
+                    Next
+                  </Button>
+                </div>
+              </div> */}
             </div>
           )}
         </div>
@@ -338,25 +526,57 @@ const Personal = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <Badge
-                          variant={
-                            execution.status
-                              ? "default"
-                              : execution.tasks_done > 0
-                                ? "secondary"
-                                : "outline"
-                          }
-                        >
-                          {getStatusText(
-                            execution.status,
-                            execution.tasks_done,
-                            execution.total_tasks,
-                          )}
-                        </Badge>
-                        <div className="text-sm text-muted-foreground">
-                          {execution.tasks_done}/{execution.total_tasks} tasks
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge
+                            variant={
+                              execution.status
+                                ? "default"
+                                : execution.tasks_done > 0
+                                  ? "secondary"
+                                  : "outline"
+                            }
+                          >
+                            {getStatusText(
+                              execution.status,
+                              execution.tasks_done,
+                              execution.total_tasks,
+                            )}
+                          </Badge>
+                          <div className="text-sm text-muted-foreground">
+                            {execution.tasks_done}/{execution.total_tasks} tasks
+                          </div>
                         </div>
+
+                        {/* 3-dots menu */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleEditExecution(execution.id)}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleDeleteExecution(execution.id)
+                              }
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </CardHeader>
                     <div className="px-6 pb-4">

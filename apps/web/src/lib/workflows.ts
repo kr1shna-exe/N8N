@@ -68,4 +68,20 @@ export const workflowService = {
       console.log("Error while updating workflows");
     }
   },
+
+  async deleteWorkflow(workflowId: string) {
+    try {
+      const response = await fetch(`${API_URL}/api/workflows/${workflowId}`, {
+        method: "DELETE",
+        headers: {
+          authorization: `Bearer ${getAuthToken()}`,
+          "Content-Type": "application/json",
+        },
+      });
+      return handleResponse(response);
+    } catch (error) {
+      console.log("Error while deleting workflow:", error);
+      throw error;
+    }
+  },
 };

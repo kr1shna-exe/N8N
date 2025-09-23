@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
+import { CreateWorkflowDialog } from "@/components/create-workflow-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,7 +15,9 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { workflowService } from "@/lib/workflows";
 import { ChevronDown, LogOut, User } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface MainLayoutProps {
@@ -24,6 +27,7 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const navigate = useNavigate();
   const { user, signout } = useAuth();
+  const [showCreateWorkflow, setShowCreateWorkflow] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -42,6 +46,33 @@ export function MainLayout({ children }: MainLayoutProps) {
     }
   };
 
+  const handleCreateWorkflow = async (workflowName: string) => {
+    try {
+      const workflowData = {
+        title: workflowName,
+        nodes: {},
+        connections: {},
+        trigger_type: "Manual",
+      };
+
+      const newWorkflow = await workflowService.saveWorkflow(workflowData);
+      toast({
+        title: "Success",
+        description: `Workflow "${workflowName}" created successfully`,
+      });
+
+      // Navigate to the new workflow editor
+      navigate(`/workflow-editor/${newWorkflow.id}`);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create workflow",
+        variant: "destructive",
+      });
+      throw error; // Re-throw to let the dialog handle it
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
@@ -57,7 +88,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               <Button
                 size="sm"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-                onClick={() => navigate("/workflow-editor")}
+                onClick={() => setShowCreateWorkflow(true)}
               >
                 Create Workflow
                 <ChevronDown className="w-4 h-4 ml-1" />
@@ -97,6 +128,13 @@ export function MainLayout({ children }: MainLayoutProps) {
           <main className="flex-1 p-6">{children}</main>
         </SidebarInset>
       </div>
+
+      {/* Create Workflow Dialog */}
+      <CreateWorkflowDialog
+        open={showCreateWorkflow}
+        onOpenChange={setShowCreateWorkflow}
+        onCreate={handleCreateWorkflow}
+      />
     </SidebarProvider>
   );
 }

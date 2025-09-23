@@ -1,3 +1,4 @@
+from os import stat
 from typing import Any, Dict
 from uuid import UUID
 
@@ -111,7 +112,7 @@ async def create_workflow(
 
 
 @router.put("/workflows/{workflow_id}")
-async def update_worflow(
+async def update_workflow(
     workflow_id: str,
     workflow_data: WorkflowCreate,
     db: Session = Depends(get_session),
@@ -120,9 +121,10 @@ async def update_worflow(
     try:
         workflow = db.get(Workflow, workflow_id)
         if not workflow:
-            raise HTTPException(status_code=400, detail="No workflow found")
+            raise HTTPException(status_code=404, detail="Workflow not found")
         if workflow.user_id != user.id:
-            raise HTTPException(status_code=400, detail="User is not authorized")
+            raise HTTPException(status_code=403, detail="Not authorized to update this workflow")
+
         workflow.title = workflow_data.title
         workflow.nodes = {
             node_id: node.dict() for node_id, node in workflow_data.nodes.items()
@@ -132,9 +134,31 @@ async def update_worflow(
         db.add(workflow)
         db.commit()
         db.refresh(workflow)
+        return workflow
     except Exception as e:
         print(f"Error while updating workflow: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
+@router.delete("/workflows/{workflow_id}")
+async def delete_workflow(workflow_id: str, db: Session = Depends(get_session), user: User = Depends(authenticate_user)):
+    try:
+        workflow = db.get(Workflow, workflow_id)
+        if not workflow:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        if workflow.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to delete this workflow")
+
+        # First, delete all executions associated with this workflow
+        executions = db.exec(select(Execution).where(Execution.workflow_id == workflow_id)).all()
+        for execution in executions:
+            db.delete(execution)
+
+        db.delete(workflow)
+        db.commit()
+        return {"message": "Workflow deleted successfully"}
+    except Exception as e:
+        print(f"Error while deleting workflow: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 def find_starting_node(nodes: Dict[str, Any], connections: Dict[str, Any]):
     has_incoming = set()

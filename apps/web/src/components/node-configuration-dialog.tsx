@@ -67,6 +67,34 @@ export function NodeConfigurationDialog({
     body: initialConfig?.template?.body || "",
   });
 
+  // Form specific fields
+  interface FormField {
+    key: string;
+    label: string;
+    type: string;
+    required: boolean;
+    placeholder: string;
+  }
+
+  const [formConfig, setFormConfig] = useState({
+    title: initialConfig?.template?.title || "Fill out this form",
+    description:
+      initialConfig?.template?.description ||
+      "Please fill out all required fields",
+    submitButtonText: initialConfig?.template?.submitButtonText || "Submit",
+    fields: (Array.isArray(initialConfig?.template?.fields)
+      ? initialConfig.template.fields
+      : [
+          {
+            key: "name",
+            label: "Name",
+            type: "text",
+            required: true,
+            placeholder: "Enter your name",
+          },
+        ]) as FormField[],
+  });
+
   const loadCredentials = useCallback(async () => {
     setLoadingCredentials(true);
     try {
@@ -76,6 +104,7 @@ export function NodeConfigurationDialog({
       const platformMap: Record<string, string> = {
         telegram: "Telegram",
         email: "ResendEmail",
+        form: "Form", // Form nodes don't need external credentials
       };
 
       const filteredCredentials = (data.credentials || []).filter(
@@ -104,7 +133,8 @@ export function NodeConfigurationDialog({
   }, [open, loadCredentials]);
 
   const handleSave = () => {
-    if (!selectedCredentialId) {
+    // Form nodes don't need credentials
+    if (nodeType !== "form" && !selectedCredentialId) {
       toast({
         title: "Error",
         description: "Please select a credential",
@@ -143,10 +173,39 @@ export function NodeConfigurationDialog({
         subject: emailConfig.subject,
         body: emailConfig.body,
       };
+    } else if (nodeType === "form") {
+      if (!formConfig.title.trim() || formConfig.fields.length === 0) {
+        toast({
+          title: "Error",
+          description: "Please provide a form title and at least one field",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate that all fields have required properties
+      const invalidFields = formConfig.fields.filter(
+        (field) => !field.key || !field.label
+      );
+      if (invalidFields.length > 0) {
+        toast({
+          title: "Error",
+          description: "All form fields must have a key and label",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      template = {
+        title: formConfig.title,
+        description: formConfig.description,
+        submitButtonText: formConfig.submitButtonText,
+        fields: formConfig.fields,
+      };
     }
 
     const config = {
-      credentialId: selectedCredentialId,
+      credentialId: selectedCredentialId || "none", // Form doesn't need credentials
       template,
     };
 
@@ -203,6 +262,36 @@ export function NodeConfigurationDialog({
         </div>
       );
     }
+  };
+
+  const addFormField = () => {
+    setFormConfig((prev) => ({
+      ...prev,
+      fields: [
+        ...prev.fields,
+        {
+          key: "",
+          label: "",
+          type: "text",
+          required: false,
+          placeholder: "",
+        },
+      ],
+    }));
+  };
+
+  const removeFormField = (index: number) => {
+    setFormConfig((prev) => ({
+      ...prev,
+      fields: prev.fields.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateFormField = (index: number, field: FormField) => {
+    setFormConfig((prev) => ({
+      ...prev,
+      fields: prev.fields.map((f, i) => (i === index ? field : f)),
+    }));
   };
 
   const renderTemplateFields = () => {
@@ -272,18 +361,209 @@ export function NodeConfigurationDialog({
           </div>
         </div>
       );
+    } else if (nodeType === "form") {
+      return (
+        <div className="space-y-6">
+          {/* Form Basic Settings */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="form-title">Form Title</Label>
+              <Input
+                id="form-title"
+                placeholder="Enter form title"
+                value={formConfig.title}
+                onChange={(e) =>
+                  setFormConfig((prev) => ({ ...prev, title: e.target.value }))
+                }
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="form-description">
+                Form Description (optional)
+              </Label>
+              <Textarea
+                id="form-description"
+                placeholder="Enter form description"
+                value={formConfig.description}
+                onChange={(e) =>
+                  setFormConfig((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                rows={2}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="submit-button">Submit Button Text</Label>
+              <Input
+                id="submit-button"
+                placeholder="Submit"
+                value={formConfig.submitButtonText}
+                onChange={(e) =>
+                  setFormConfig((prev) => ({
+                    ...prev,
+                    submitButtonText: e.target.value,
+                  }))
+                }
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          {/* Form Fields */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-medium">Form Fields</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addFormField}
+                className="text-xs"
+              >
+                + Add Field
+              </Button>
+            </div>
+
+            <div className="space-y-4 max-h-64 overflow-y-auto">
+              {formConfig.fields.map((field, index) => (
+                <div key={index} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      Field {index + 1}
+                    </span>
+                    {formConfig.fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFormField(index)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor={`field-key-${index}`}>Field Key</Label>
+                      <Input
+                        id={`field-key-${index}`}
+                        placeholder="field_name"
+                        value={field.key}
+                        onChange={(e) =>
+                          updateFormField(index, {
+                            ...field,
+                            key: e.target.value,
+                          })
+                        }
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`field-label-${index}`}>
+                        Field Label
+                      </Label>
+                      <Input
+                        id={`field-label-${index}`}
+                        placeholder="Field Label"
+                        value={field.label}
+                        onChange={(e) =>
+                          updateFormField(index, {
+                            ...field,
+                            label: e.target.value,
+                          })
+                        }
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor={`field-type-${index}`}>Field Type</Label>
+                      <Select
+                        value={field.type}
+                        onValueChange={(value) =>
+                          updateFormField(index, { ...field, type: value })
+                        }
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Text</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="textarea">Textarea</SelectItem>
+                          <SelectItem value="select">Select</SelectItem>
+                          <SelectItem value="checkbox">Checkbox</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor={`field-placeholder-${index}`}>
+                        Placeholder
+                      </Label>
+                      <Input
+                        id={`field-placeholder-${index}`}
+                        placeholder="Enter placeholder text"
+                        value={field.placeholder}
+                        onChange={(e) =>
+                          updateFormField(index, {
+                            ...field,
+                            placeholder: e.target.value,
+                          })
+                        }
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`field-required-${index}`}
+                      checked={field.required}
+                      onChange={(e) =>
+                        updateFormField(index, {
+                          ...field,
+                          required: e.target.checked,
+                        })
+                      }
+                      className="rounded"
+                    />
+                    <Label
+                      htmlFor={`field-required-${index}`}
+                      className="text-sm"
+                    >
+                      Required field
+                    </Label>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
     }
   };
 
   const getDialogTitle = () => {
     if (nodeType === "telegram") return "Configure Telegram Node";
     if (nodeType === "email") return "Configure Email Node";
+    if (nodeType === "form") return "Configure Form Node";
     return "Configure Node";
   };
 
   const getNodeIcon = () => {
     if (nodeType === "telegram") return "📱";
     if (nodeType === "email") return "📧";
+    if (nodeType === "form") return "📝";
     return "⚙️";
   };
 
@@ -298,51 +578,55 @@ export function NodeConfigurationDialog({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Credentials Section */}
-          <div>
-            <Label htmlFor="credential">Select Credential</Label>
-            <Select
-              value={selectedCredentialId}
-              onValueChange={setSelectedCredentialId}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue
-                  placeholder={
-                    loadingCredentials
-                      ? "Loading credentials..."
-                      : credentials.length === 0
-                        ? "No credentials available"
-                        : "Select a credential"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {credentials.map((credential) => (
-                  <SelectItem key={credential.id} value={credential.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{getNodeIcon()}</span>
-                      <span>{credential.title}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Credentials Section - Skip for form nodes */}
+          {nodeType !== "form" && (
+            <div>
+              <Label htmlFor="credential">Select Credential</Label>
+              <Select
+                value={selectedCredentialId}
+                onValueChange={setSelectedCredentialId}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue
+                    placeholder={
+                      loadingCredentials
+                        ? "Loading credentials..."
+                        : credentials.length === 0
+                          ? "No credentials available"
+                          : "Select a credential"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {credentials.map((credential) => (
+                    <SelectItem key={credential.id} value={credential.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{getNodeIcon()}</span>
+                        <span>{credential.title}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            {credentials.length === 0 && !loadingCredentials && (
-              <p className="text-sm text-muted-foreground mt-2">
-                No {nodeType} credentials found. Please add credentials first.
-              </p>
-            )}
+              {credentials.length === 0 && !loadingCredentials && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  No {nodeType} credentials found. Please add credentials first.
+                </p>
+              )}
 
-            {renderCredentialDetails()}
-          </div>
+              {renderCredentialDetails()}
+            </div>
+          )}
 
           {/* Template Fields Section */}
           <div>
             <h3 className="text-lg font-medium mb-4">
               {nodeType === "telegram"
                 ? "Message Configuration"
-                : "Email Configuration"}
+                : nodeType === "email"
+                  ? "Email Configuration"
+                  : "Form Configuration"}
             </h3>
             {renderTemplateFields()}
           </div>
