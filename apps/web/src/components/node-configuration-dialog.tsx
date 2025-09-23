@@ -51,7 +51,7 @@ export function NodeConfigurationDialog({
 }: NodeConfigurationProps) {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [selectedCredentialId, setSelectedCredentialId] = useState(
-    initialConfig?.credentialId || ""
+    initialConfig?.credentialId || "",
   );
   const [loadingCredentials, setLoadingCredentials] = useState(false);
 
@@ -69,8 +69,7 @@ export function NodeConfigurationDialog({
 
   // Form specific fields
   interface FormField {
-    key: string;
-    label: string;
+    name: string;
     type: string;
     required: boolean;
     placeholder: string;
@@ -86,8 +85,7 @@ export function NodeConfigurationDialog({
       ? initialConfig.template.fields
       : [
           {
-            key: "name",
-            label: "Name",
+            name: "Name",
             type: "text",
             required: true,
             placeholder: "Enter your name",
@@ -108,7 +106,7 @@ export function NodeConfigurationDialog({
       };
 
       const filteredCredentials = (data.credentials || []).filter(
-        (cred: Credential) => cred.platform === platformMap[nodeType]
+        (cred: Credential) => cred.platform === platformMap[nodeType],
       );
 
       setCredentials(filteredCredentials);
@@ -184,13 +182,11 @@ export function NodeConfigurationDialog({
       }
 
       // Validate that all fields have required properties
-      const invalidFields = formConfig.fields.filter(
-        (field) => !field.key || !field.label
-      );
+      const invalidFields = formConfig.fields.filter((field) => !field.name);
       if (invalidFields.length > 0) {
         toast({
           title: "Error",
-          description: "All form fields must have a key and label",
+          description: "All form fields must have a name",
           variant: "destructive",
         });
         return;
@@ -270,8 +266,7 @@ export function NodeConfigurationDialog({
       fields: [
         ...prev.fields,
         {
-          key: "",
-          label: "",
+          name: "",
           type: "text",
           required: false,
           placeholder: "",
@@ -416,7 +411,7 @@ export function NodeConfigurationDialog({
           {/* Form Fields */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label className="text-base font-medium">Form Fields</Label>
+              <Label className="text-base font-medium">Form Attributes</Label>
               <Button
                 type="button"
                 variant="outline"
@@ -448,34 +443,17 @@ export function NodeConfigurationDialog({
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3">
                     <div>
-                      <Label htmlFor={`field-key-${index}`}>Field Key</Label>
+                      <Label htmlFor={`field-name-${index}`}>Field Name</Label>
                       <Input
-                        id={`field-key-${index}`}
-                        placeholder="field_name"
-                        value={field.key}
+                        id={`field-name-${index}`}
+                        placeholder="Field Name(Email, Username, Number..)"
+                        value={field.name}
                         onChange={(e) =>
                           updateFormField(index, {
                             ...field,
-                            key: e.target.value,
-                          })
-                        }
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`field-label-${index}`}>
-                        Field Label
-                      </Label>
-                      <Input
-                        id={`field-label-${index}`}
-                        placeholder="Field Label"
-                        value={field.label}
-                        onChange={(e) =>
-                          updateFormField(index, {
-                            ...field,
-                            label: e.target.value,
+                            name: e.target.value,
                           })
                         }
                         className="mt-1"

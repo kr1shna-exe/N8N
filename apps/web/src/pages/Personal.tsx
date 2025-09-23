@@ -8,7 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { WorkflowCards } from "@/components/workflow-cards";
 import { WorkflowTabs } from "@/components/workflow-tabs";
 import { toast } from "@/hooks/use-toast";
@@ -23,11 +22,9 @@ import {
   CheckCircle,
   Clock,
   Edit,
-  Filter,
   Loader,
   MoreHorizontal,
   Plus,
-  Search,
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -88,7 +85,7 @@ const Personal = () => {
       setLoading(true);
       const response = await credentialsApi.getCredentials();
       const frontendCredentials = response.credentials.map(
-        mapFromBackendCredential,
+        mapFromBackendCredential
       );
       setCredentials(frontendCredentials);
     } catch (error) {
@@ -108,7 +105,7 @@ const Personal = () => {
       const response =
         await credentialsApi.createCredentials(backendCredential);
       const frontendCredential = mapFromBackendCredential(
-        response.newCredentials,
+        response.newCredentials
       );
       setCredentials([...credentials, frontendCredential]);
 
@@ -159,7 +156,7 @@ const Personal = () => {
   const getStatusIcon = (
     status: boolean,
     tasks_done: number,
-    total_tasks: number,
+    total_tasks: number
   ) => {
     if (status) {
       return <CheckCircle className="h-5 w-5 text-green-500" />;
@@ -173,7 +170,7 @@ const Personal = () => {
   const getStatusText = (
     status: boolean,
     tasks_done: number,
-    total_tasks: number,
+    total_tasks: number
   ) => {
     if (status) return "Completed";
     if (tasks_done > 0) return "Running";
@@ -229,7 +226,7 @@ const Personal = () => {
   };
 
   const filteredWorkflows = workflows.filter((workflow) =>
-    workflow.title?.toLowerCase().includes(searchQuery.toLowerCase()),
+    workflow.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -515,7 +512,7 @@ const Personal = () => {
                         {getStatusIcon(
                           execution.status,
                           execution.tasks_done,
-                          execution.total_tasks,
+                          execution.total_tasks
                         )}
                         <div>
                           <CardTitle className="text-base">
@@ -540,7 +537,7 @@ const Personal = () => {
                             {getStatusText(
                               execution.status,
                               execution.tasks_done,
-                              execution.total_tasks,
+                              execution.total_tasks
                             )}
                           </Badge>
                           <div className="text-sm text-muted-foreground">

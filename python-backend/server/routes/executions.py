@@ -36,6 +36,29 @@ async def get_executions(
         print(f"Error while getting executions: {exe}")
 
 
+@router.get("/executions/{execution_id}")
+async def get_execution_by_id(
+    execution_id: str, db: Session = Depends(get_session)
+):
+    try:
+        execution = db.get(Execution, execution_id)
+        if not execution:
+            raise HTTPException(status_code=404, detail="Execution not found")
+        return {
+            "id": str(execution.id),
+            "workflow_id": execution.workflow_id,
+            "status": execution.status,
+            "tasks_done": execution.tasks_done,
+            "total_tasks": execution.total_tasks,
+            "result": execution.result,
+            "paused_node_id": execution.paused_node_id,
+        }
+    except Exception as exe:
+        print(f"Error while getting execution: {exe}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+
 @router.post("/executions/{execution_id}/resume")
 async def resume_workflow(
     execution_id: str, data: Dict[str, Any], db: Session = Depends(get_session)

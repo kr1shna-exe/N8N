@@ -89,7 +89,7 @@ const WorkflowEditor = () => {
   }, []);
 
   const handleNodeConfigSave = useCallback(
-    (config: { credentialId: string; template: Record<string, string> }) => {
+    (config: { credentialId: string; template: Record<string, any> }) => {
       if (!selectedNodeForConfig) return;
 
       setNodes((nodes) =>
