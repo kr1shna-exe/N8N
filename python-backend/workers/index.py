@@ -67,9 +67,10 @@ async def process_jobs():
                         db.close()
                     continue
 
-                if job_type == "manual" or job_type == "webhook":
-                    node_result = {}
-                else:
+                node_result = {}
+                if job_type == "webhook":
+                    node_result = job["data"].get("context", {})
+                elif job_type != "manual":
                     node = {
                         "type": job_type,
                         "template": job["data"]["nodeData"]["data"]["config"][

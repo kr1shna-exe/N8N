@@ -1,9 +1,16 @@
 from os import stat
 from typing import Any, Dict
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from db.database import get_session
-from db.models.models import Execution, ExecutionStatus, User, Workflow
+from db.models.models import (
+    Execution,
+    ExecutionStatus,
+    TriggerType,
+    User,
+    Webhook,
+    Workflow,
+)
 from db.models.schemas import WorkflowCreate
 from fastapi import APIRouter, Depends, HTTPException
 from server.redis.redis import addToQueue
@@ -27,9 +34,12 @@ async def execute_workflow(
         nodes: Dict[str, Any] = workflow.nodes
         connections: Dict[str, Any] = workflow.connections
         executable_node_types = {"email", "telegram", "form", "webhook"}
-        total_tasks = sum(1 for node in nodes.values() 
-                         if node.get("type", "").lower() in executable_node_types or 
-                            node.get("data", {}).get("nodeType", "").lower() in executable_node_types)
+        total_tasks = sum(
+            1
+            for node in nodes.values()
+            if node.get("type", "").lower() in executable_node_types
+            or node.get("data", {}).get("nodeType", "").lower() in executable_node_types
+        )
         execution = Execution(
             workflow_id=UUID(workflow_id),
             status=ExecutionStatus.RUNNING,
@@ -97,13 +107,23 @@ async def create_workflow(
     user: User = Depends(authenticate_user),
 ):
     try:
+        webhook_id = None
+        if workflow.trigger_type == TriggerType.WEBHOOK:
+            new_webhook = Webhook(
+                title="Default Webhook",
+                id=uuid4(),
+            )
+            db.add(new_webhook)
+            db.commit()
+            db.refresh(new_webhook)
+            webhook_id = new_webhook.id
         new_workflow = Workflow(
             title=workflow.title,
             nodes=workflow.nodes,
             connections=workflow.connections,
             trigger_type=workflow.trigger_type,
             user_id=user.id,
-            webhook_id=None,
+            webhook_id=webhook_id,
         )
         db.add(new_workflow)
         db.commit()
@@ -126,8 +146,14 @@ async def update_workflow(
         if not workflow:
             raise HTTPException(status_code=404, detail="Workflow not found")
         if workflow.user_id != user.id:
-            raise HTTPException(status_code=403, detail="Not authorized to update this workflow")
-
+            raise HTTPException(
+                status_code=403, detail="Not authorized to update this workflow"
+            )
+        if workflow.trigger_type == TriggerType.WEBHOOK and not workflow.webhook_id:
+            new_Webhook = Webhook(title="Default Webhook", id=uuid4())
+            db.add(new_Webhook)
+            db.commit()
+            db.refresh(new_Webhook)
         workflow.title = workflow_data.title
         workflow.nodes = {
             node_id: node.dict() for node_id, node in workflow_data.nodes.items()
@@ -142,17 +168,26 @@ async def update_workflow(
         print(f"Error while updating workflow: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
+
 @router.delete("/workflows/{workflow_id}")
-async def delete_workflow(workflow_id: str, db: Session = Depends(get_session), user: User = Depends(authenticate_user)):
+async def delete_workflow(
+    workflow_id: str,
+    db: Session = Depends(get_session),
+    user: User = Depends(authenticate_user),
+):
     try:
         workflow = db.get(Workflow, workflow_id)
         if not workflow:
             raise HTTPException(status_code=404, detail="Workflow not found")
         if workflow.user_id != user.id:
-            raise HTTPException(status_code=403, detail="Not authorized to delete this workflow")
+            raise HTTPException(
+                status_code=403, detail="Not authorized to delete this workflow"
+            )
 
         # First, delete all executions associated with this workflow
-        executions = db.exec(select(Execution).where(Execution.workflow_id == workflow_id)).all()
+        executions = db.exec(
+            select(Execution).where(Execution.workflow_id == workflow_id)
+        ).all()
         for execution in executions:
             db.delete(execution)
 
@@ -162,6 +197,7 @@ async def delete_workflow(workflow_id: str, db: Session = Depends(get_session), 
     except Exception as e:
         print(f"Error while deleting workflow: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 def find_starting_node(nodes: Dict[str, Any], connections: Dict[str, Any]):
     has_incoming = set()

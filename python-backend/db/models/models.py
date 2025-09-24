@@ -80,7 +80,7 @@ class Execution(SQLModel, table=True):
     status: ExecutionStatus = Field(default=ExecutionStatus.RUNNING)
     tasks_done: int = Field(default=0)
     total_tasks: Optional[int] = None
-    result: Optional[Dict[str, Any]] = Field(sa_column=Column(JSON))
+    result: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
     workflow_id: UUID = Field(foreign_key="workflow.id")
     paused_node_id: Optional[str] = None
 
