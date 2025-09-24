@@ -13,7 +13,7 @@ async def handle_webhook_call(
     webhook_id: UUID, db: Session, headers: Dict, body: bytes, query_params: Dict
 ):
     try:
-        statement = select(Workflow).where(Workflow.webhook_id == webhook_id)
+        statement = select(Workflow).where(Workflow.id == webhook_id)
         workflow = db.exec(statement).first()
         if not workflow:
             raise HTTPException(
@@ -36,9 +36,13 @@ async def handle_webhook_call(
         db.add(new_execution)
         db.commit()
         db.refresh(new_execution)
+        try:
+            body_data = json.loads(body.decode("utf-8"))
+        except json.JSONDecodeError:
+            body_data = body.decode("utf-8", errors="ignore")
         webhook_data = {
             "headers": headers,
-            "body": body.decode("utf-8", errors="ignore"),
+            "body": body_data,
             "query_params": query_params,
         }
         initial_job = {

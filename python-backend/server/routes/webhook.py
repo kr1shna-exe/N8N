@@ -10,9 +10,7 @@ from sqlmodel import Session
 
 router = APIRouter()
 
-router.post("/webhook/{webhook_id}")
-
-
+@router.post("/webhook/{webhook_id}")
 async def initiate_webhook(
     webhook_id: UUID, request: Request, db: Session = Depends(get_session)
 ):

@@ -63,23 +63,23 @@ const WorkflowEditor = () => {
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
       setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes]
+    [setNodes],
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
       setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges]
+    [setEdges],
   );
 
   const onConnect = useCallback(
     (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges]
+    [setEdges],
   );
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     // Only show configuration for configurable nodes
-    const configurableNodeTypes = ["telegram", "email", "form"];
+    const configurableNodeTypes = ["telegram", "email", "form", "webhook"];
     const nodeType = node.data.nodeType as string;
 
     if (configurableNodeTypes.includes(nodeType)) {
@@ -103,8 +103,8 @@ const WorkflowEditor = () => {
                   configured: true,
                 },
               }
-            : node
-        )
+            : node,
+        ),
       );
 
       toast({
@@ -114,7 +114,7 @@ const WorkflowEditor = () => {
 
       setSelectedNodeForConfig(null);
     },
-    [selectedNodeForConfig]
+    [selectedNodeForConfig],
   );
 
   const addNodeFromSelector = useCallback(
@@ -163,7 +163,7 @@ const WorkflowEditor = () => {
 
       console.log(`Added ${nodeType.name} node to workflow`);
     },
-    [nodes, setNodes]
+    [nodes, setNodes],
   );
 
   const handleExecuteWorkflow = async () => {
@@ -246,7 +246,7 @@ const WorkflowEditor = () => {
               .map(
                 (
                   [nodeId, nodeData]: [string, Record<string, unknown>],
-                  index
+                  index,
                 ) => {
                   if (!nodeData) {
                     return null;
@@ -266,7 +266,7 @@ const WorkflowEditor = () => {
                       borderRadius: "8px",
                     },
                   };
-                }
+                },
               )
               .filter(Boolean) as Node[];
             const reactFlowEdges = [];
@@ -283,7 +283,7 @@ const WorkflowEditor = () => {
               } else {
                 console.error(
                   "targets is not an array for sourceId:",
-                  sourceId
+                  sourceId,
                 );
               }
             }
@@ -354,6 +354,7 @@ const WorkflowEditor = () => {
             nodeType={selectedNodeForConfig.data.nodeType as string}
             onSave={handleNodeConfigSave}
             initialConfig={selectedNodeForConfig.data.config}
+            WorkflowId={workflowId}
           />
         )}
 

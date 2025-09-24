@@ -17,6 +17,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { credentialsApi } from "@/lib/credentials";
+import { Copy } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 interface Credential {
@@ -40,6 +41,7 @@ interface NodeConfigurationProps {
   nodeType: string;
   onSave: (config: NodeConfig) => void;
   initialConfig?: Partial<NodeConfig>;
+  WorkflowId: string;
 }
 
 export function NodeConfigurationDialog({
@@ -48,10 +50,11 @@ export function NodeConfigurationDialog({
   nodeType,
   onSave,
   initialConfig = {},
+  WorkflowId,
 }: NodeConfigurationProps) {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [selectedCredentialId, setSelectedCredentialId] = useState(
-    initialConfig?.credentialId || "",
+    initialConfig?.credentialId || ""
   );
   const [loadingCredentials, setLoadingCredentials] = useState(false);
 
@@ -66,6 +69,8 @@ export function NodeConfigurationDialog({
     subject: initialConfig?.template?.subject || "",
     body: initialConfig?.template?.body || "",
   });
+
+  const webhookUrl = `${import.meta.env.VITE_BACKEND_URL}/api/webhook/${WorkflowId}`;
 
   // Form specific fields
   interface FormField {
@@ -94,6 +99,10 @@ export function NodeConfigurationDialog({
   });
 
   const loadCredentials = useCallback(async () => {
+    if (nodeType === "webhook" || nodeType === "form") {
+      setCredentials([]);
+      return;
+    }
     setLoadingCredentials(true);
     try {
       const data = await credentialsApi.getCredentials();
@@ -106,7 +115,7 @@ export function NodeConfigurationDialog({
       };
 
       const filteredCredentials = (data.credentials || []).filter(
-        (cred: Credential) => cred.platform === platformMap[nodeType],
+        (cred: Credential) => cred.platform === platformMap[nodeType]
       );
 
       setCredentials(filteredCredentials);
@@ -132,7 +141,11 @@ export function NodeConfigurationDialog({
 
   const handleSave = () => {
     // Form nodes don't need credentials
-    if (nodeType !== "form" && !selectedCredentialId) {
+    if (
+      nodeType !== "form" &&
+      nodeType !== "webhook" &&
+      !selectedCredentialId
+    ) {
       toast({
         title: "Error",
         description: "Please select a credential",
@@ -198,6 +211,8 @@ export function NodeConfigurationDialog({
         submitButtonText: formConfig.submitButtonText,
         fields: formConfig.fields,
       };
+    } else if (nodeType === "webhook") {
+      template = {};
     }
 
     const config = {
@@ -528,6 +543,34 @@ export function NodeConfigurationDialog({
           </div>
         </div>
       );
+    } else if (nodeType === "webhook") {
+      return (
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="webhook-url">Webhook URL</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Input id="webhook-url" value={webhookUrl} readOnly />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  navigator.clipboard.writeText(webhookUrl);
+                  toast({
+                    title: "Copied to clipboard",
+                    description: "Webhook URL copied to clipboard",
+                  });
+                }}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Send a POST request to this URL to trigger your workflow. The
+              request body will be available as the output of this node.
+            </p>
+          </div>
+        </div>
+      );
     }
   };
 
@@ -535,6 +578,7 @@ export function NodeConfigurationDialog({
     if (nodeType === "telegram") return "Configure Telegram Node";
     if (nodeType === "email") return "Configure Email Node";
     if (nodeType === "form") return "Configure Form Node";
+    if (nodeType === "webhook") return "Webhook Trigger";
     return "Configure Node";
   };
 
@@ -542,6 +586,7 @@ export function NodeConfigurationDialog({
     if (nodeType === "telegram") return "📱";
     if (nodeType === "email") return "📧";
     if (nodeType === "form") return "📝";
+    if (nodeType === "webhook") return "🔗";
     return "⚙️";
   };
 
@@ -557,7 +602,7 @@ export function NodeConfigurationDialog({
 
         <div className="space-y-6">
           {/* Credentials Section - Skip for form nodes */}
-          {nodeType !== "form" && (
+          {nodeType !== "form" && nodeType !== "webhook" && (
             <div>
               <Label htmlFor="credential">Select Credential</Label>
               <Select
@@ -599,13 +644,15 @@ export function NodeConfigurationDialog({
 
           {/* Template Fields Section */}
           <div>
-            <h3 className="text-lg font-medium mb-4">
-              {nodeType === "telegram"
-                ? "Message Configuration"
-                : nodeType === "email"
-                  ? "Email Configuration"
-                  : "Form Configuration"}
-            </h3>
+            {nodeType !== "webhook" && (
+              <h3 className="text-lg font-medium mb-4">
+                {nodeType === "telegram"
+                  ? "Message Configuration"
+                  : nodeType === "email"
+                    ? "Email Configuration"
+                    : "Form Configuration"}
+              </h3>
+            )}
             {renderTemplateFields()}
           </div>
 

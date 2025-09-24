@@ -1,19 +1,16 @@
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
-
 from db.database import get_session
 from db.models.models import Execution, ExecutionStatus, Workflow
+from fastapi import APIRouter, Depends, HTTPException
 from server.redis.redis import addToQueue
+from sqlmodel import Session, select
 
 router = APIRouter()
 
 
 @router.get("/executions")
-async def get_executions(
-    db: Session = Depends(get_session)
-):
+async def get_executions(db: Session = Depends(get_session)):
     try:
         executions = db.exec(select(Execution)).all()
         if not executions:
@@ -28,18 +25,16 @@ async def get_executions(
                     "total_tasks": execution.total_tasks,
                     "result": execution.result,
                 }
-                    for execution in executions
+                for execution in executions
             ],
-            "total": len(executions)
+            "total": len(executions),
         }
     except Exception as exe:
         print(f"Error while getting executions: {exe}")
 
 
 @router.get("/executions/{execution_id}")
-async def get_execution_by_id(
-    execution_id: str, db: Session = Depends(get_session)
-):
+async def get_execution_by_id(execution_id: str, db: Session = Depends(get_session)):
     try:
         execution = db.get(Execution, execution_id)
         if not execution:
@@ -58,7 +53,6 @@ async def get_execution_by_id(
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-
 @router.post("/executions/{execution_id}/resume")
 async def resume_workflow(
     execution_id: str, data: Dict[str, Any], db: Session = Depends(get_session)
@@ -73,7 +67,7 @@ async def resume_workflow(
         execution.status = ExecutionStatus.RUNNING
         execution.result["form_data"] = data
         paused_node_id = execution.paused_node_id
-        execution.paused_node_id = None 
+        execution.paused_node_id = None
         db.add(execution)
         db.commit()
 
@@ -88,6 +82,13 @@ async def resume_workflow(
 
         nodes = workflow.nodes
         connections = workflow.connections
+        original_context = {}
+        node_results = execution.result.get("nodeResults", {})
+        for node_id, node_result in node_results.items():
+            node_data = nodes.get(node_id, {})
+            if node_data.get("type") == "webhook":
+                original_context = node_result.get("result", {})
+                break
         next_node_ids = connections.get(paused_node_id, [])
         for next_node_id in next_node_ids:
             next_node_data = nodes.get(next_node_id)
@@ -103,7 +104,10 @@ async def resume_workflow(
                     "nodeId": next_node_id,
                     "credentialId": next_node_data.get("credentials"),
                     "nodeData": next_node_data,
-                    "context": {**execution.result.get("triggerPyload", {}), **data},
+                    "context": {
+                        **original_context,
+                        "form": data,
+                    },
                     "connections": connections.get(next_node_id, []),
                 },
             }

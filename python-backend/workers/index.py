@@ -51,6 +51,7 @@ async def process_jobs():
             print("Job data:", job)
 
             job_type = job.get("type")
+            node_result = {}
             with next(get_session()) as db:
                 if job_type == "form":
                     try:
@@ -67,7 +68,6 @@ async def process_jobs():
                         db.close()
                     continue
 
-                node_result = {}
                 if job_type == "webhook":
                     node_result = job["data"].get("context", {})
                 elif job_type != "manual":

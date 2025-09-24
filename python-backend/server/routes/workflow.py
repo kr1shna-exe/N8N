@@ -45,7 +45,7 @@ async def execute_workflow(
             status=ExecutionStatus.RUNNING,
             tasks_done=0,
             total_tasks=total_tasks,
-            result={"triggerPyload": context, "nodeResults": {}},
+            result={"triggerPayload": context, "nodeResults": {}},
         )
         db.add(execution)
         db.commit()
