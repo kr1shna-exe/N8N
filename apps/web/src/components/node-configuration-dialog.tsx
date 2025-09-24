@@ -31,7 +31,7 @@ interface Credential {
 
 interface NodeConfig {
   credentialId: string;
-  template: Record<string, string>;
+  template: Record<string, any>;
 }
 
 interface NodeConfigurationProps {

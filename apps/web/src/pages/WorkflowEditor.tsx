@@ -30,7 +30,7 @@ interface Node {
     description?: string;
     config?: {
       credentialId: string;
-      template: Record<string, string>;
+      template: Record<string, any>;
     };
     configured?: boolean;
   };
@@ -168,10 +168,7 @@ const WorkflowEditor = () => {
 
   const handleExecuteWorkflow = async () => {
     if (workflowId) {
-      const context = {
-        name: "JohnDoe",
-        email: "Johndoe@example.com",
-      };
+      const context = {};
       try {
         await executionService.executeWorkflow(workflowId, context);
         toast({ title: "Success", description: "Workflow execution started" });

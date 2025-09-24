@@ -26,7 +26,10 @@ async def execute_workflow(
             )
         nodes: Dict[str, Any] = workflow.nodes
         connections: Dict[str, Any] = workflow.connections
-        total_tasks = len(nodes)
+        executable_node_types = {"email", "telegram", "form", "webhook"}
+        total_tasks = sum(1 for node in nodes.values() 
+                         if node.get("type", "").lower() in executable_node_types or 
+                            node.get("data", {}).get("nodeType", "").lower() in executable_node_types)
         execution = Execution(
             workflow_id=UUID(workflow_id),
             status=ExecutionStatus.RUNNING,
