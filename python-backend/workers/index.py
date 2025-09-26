@@ -7,7 +7,7 @@ from typing import Any
 
 from db.database import get_session
 from db.models.models import Execution, ExecutionStatus, Workflow
-from server.redis.redis import addToQueue, getFromQueue
+from server.redis.index import addToQueue, getFromQueue
 from sqlmodel import Session
 from workers.nodes.runNode.runner import runNode
 

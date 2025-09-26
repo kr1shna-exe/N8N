@@ -5,7 +5,7 @@ from uuid import UUID
 from db.models.models import Execution, ExecutionStatus, Workflow
 from exports.redis import redis_client
 from fastapi import HTTPException
-from server.redis.redis import addToQueue
+from server.redis.index import addToQueue
 from sqlmodel import Session, select
 
 

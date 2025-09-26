@@ -13,7 +13,7 @@ from db.models.models import (
 )
 from db.models.schemas import WorkflowCreate
 from fastapi import APIRouter, Depends, HTTPException
-from server.redis.redis import addToQueue
+from server.redis.index import addToQueue
 from server.routes.user import authenticate_user
 from sqlmodel import Session, select
 

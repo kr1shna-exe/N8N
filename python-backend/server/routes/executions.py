@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 from db.database import get_session
 from db.models.models import Execution, ExecutionStatus, Workflow
 from fastapi import APIRouter, Depends, HTTPException
-from server.redis.redis import addToQueue
+from server.redis.index import addToQueue
 from sqlmodel import Session, select
 
 router = APIRouter()
