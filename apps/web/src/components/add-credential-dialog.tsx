@@ -21,11 +21,9 @@ interface AddCredentialDialogProps {
 
 const services = [
   { id: "telegram", name: "Telegram", api: "Telegram API", icon: "📱" },
-  { id: "email", name: "Email", api: "Email Service", icon: "📧" }, // Add Email service
-  { id: "slack", name: "Slack", api: "Slack API", icon: "💬" },
-  { id: "github", name: "GitHub", api: "GitHub API", icon: "🐙" },
-  { id: "google", name: "Google", api: "Google API", icon: "🔍" },
-  { id: "discord", name: "Discord", api: "Discord API", icon: "🎮" },
+  { id: "resend", name: "ResendEmail", api: "Resend Email API", icon: "📧" },
+  { id: "gemini", name: "Gemini", api: "Gemini API", icon: "🤖" },
+  { id: "groq", name: "Groq", api: "Groq API", icon: "⚡" },
 ];
 
 export function AddCredentialDialog({
@@ -57,9 +55,13 @@ export function AddCredentialDialog({
       baseUrl:
         service.id === "telegram"
           ? "https://api.telegram.org"
-          : service.id === "email" || service.id === "resend"
+          : service.id === "resend"
             ? "https://api.resend.com"
-            : `https://api.${service.id}.com`,
+            : service.id === "gemini"
+              ? "https://generativelanguage.googleapis.com"
+              : service.id === "groq"
+                ? "https://api.groq.com"
+                : `https://api.${service.id}.com`,
     });
     setStep("configure");
   };
@@ -192,23 +194,45 @@ export function AddCredentialDialog({
                   </div>
 
                   <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="accessToken">
-                        Access Token / API Key
-                      </Label>
-                      <Textarea
-                        id="accessToken"
-                        value={credentialData.accessToken}
-                        onChange={(e) =>
-                          setCredentialData({
-                            ...credentialData,
-                            accessToken: e.target.value,
-                          })
-                        }
-                        className="mt-1 min-h-[100px]"
-                        placeholder="Enter your access token or API key..."
-                      />
-                    </div>
+                    {/* For Gemini, Groq - show only API Key field */}
+                    {selectedService.id === "gemini" ||
+                    selectedService.id === "groq" ? (
+                      <div>
+                        <Label htmlFor="accessToken">API Key</Label>
+                        <Input
+                          id="accessToken"
+                          type="password"
+                          value={credentialData.accessToken}
+                          onChange={(e) =>
+                            setCredentialData({
+                              ...credentialData,
+                              accessToken: e.target.value,
+                            })
+                          }
+                          className="mt-1"
+                          placeholder="Enter your API key"
+                        />
+                      </div>
+                    ) : (
+                      /* For other services like Telegram, ResendEmail - show Access Token field */
+                      <div>
+                        <Label htmlFor="accessToken">
+                          Access Token / API Key
+                        </Label>
+                        <Textarea
+                          id="accessToken"
+                          value={credentialData.accessToken}
+                          onChange={(e) =>
+                            setCredentialData({
+                              ...credentialData,
+                              accessToken: e.target.value,
+                            })
+                          }
+                          className="mt-1 min-h-[100px]"
+                          placeholder="Enter your access token or API key..."
+                        />
+                      </div>
+                    )}
 
                     {/* Show Chat ID field only for Telegram */}
                     {selectedService.id === "telegram" && (
@@ -232,21 +256,25 @@ export function AddCredentialDialog({
                       </div>
                     )}
 
-                    <div>
-                      <Label htmlFor="baseUrl">Base URL</Label>
-                      <Input
-                        id="baseUrl"
-                        value={credentialData.baseUrl}
-                        onChange={(e) =>
-                          setCredentialData({
-                            ...credentialData,
-                            baseUrl: e.target.value,
-                          })
-                        }
-                        className="mt-1"
-                        placeholder="Enter the base URL for the API"
-                      />
-                    </div>
+                    {/* Only show Base URL for services that need it (not for API-only services like Gemini) */}
+                    {selectedService.id !== "gemini" &&
+                      selectedService.id !== "groq" && (
+                        <div>
+                          <Label htmlFor="baseUrl">Base URL</Label>
+                          <Input
+                            id="baseUrl"
+                            value={credentialData.baseUrl}
+                            onChange={(e) =>
+                              setCredentialData({
+                                ...credentialData,
+                                baseUrl: e.target.value,
+                              })
+                            }
+                            className="mt-1"
+                            placeholder="Enter the base URL for the API"
+                          />
+                        </div>
+                      )}
                   </div>
                 </TabsContent>
 

@@ -11,6 +11,7 @@ type Credential = {
   platform: Platform;
   data: {
     apiKey: string;
+    chatId?: string;
   };
   userId: string;
 };
@@ -94,13 +95,16 @@ export const credentialsApi = {
   },
 
   getCredentialsByPlatform: async (platform: string) => {
-    const response = await fetch(`${API_URL}/api/user/credentials/${platform}`, {
-      method: "GET",
-      headers: {
-        authorization: `Bearer ${getAuthToken()}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetch(
+      `${API_URL}/api/user/credentials/${platform}`,
+      {
+        method: "GET",
+        headers: {
+          authorization: `Bearer ${getAuthToken()}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return handleResponse(response);
   },
 };
@@ -112,10 +116,27 @@ export const mapToBackendCredential = (frontendData: {
   chatId?: string;
   baseUrl?: string;
 }): credentialsSchema => {
-  const platform =
-    frontendData.service.id === "telegram"
-      ? Platform.Telegram
-      : Platform.ResendEmail;
+  let platform: Platform;
+
+  switch (frontendData.service.id.toLowerCase()) {
+    case "telegram":
+      platform = Platform.Telegram;
+      break;
+    case "resendemail":
+    case "resend":
+    case "email":
+      platform = Platform.ResendEmail;
+      break;
+    case "gemini":
+      platform = Platform.Gemini;
+      break;
+    case "groq":
+      platform = Platform.Groq;
+      break;
+    default:
+      throw new Error(`Unsupported platform: ${frontendData.service.id}`);
+  }
+
   if (platform === Platform.Telegram) {
     return {
       title: frontendData.name,
@@ -137,6 +158,21 @@ export const mapToBackendCredential = (frontendData: {
 };
 
 export const mapFromBackendCredential = (backendCredential: Credential) => {
+  const getIconForPlatform = (platform: Platform): string => {
+    switch (platform.toUpperCase()) {
+      case "TELEGRAM":
+        return "📱";
+      case "RESENDEMAIL":
+        return "📧";
+      case "GEMINI":
+        return "🤖";
+      case "GROQ":
+        return "⚡";
+      default:
+        return "🔧";
+    }
+  };
+
   return {
     id: backendCredential.id,
     name: backendCredential.title,
@@ -144,12 +180,28 @@ export const mapFromBackendCredential = (backendCredential: Credential) => {
       id: backendCredential.platform.toLowerCase(),
       name: backendCredential.platform,
       api: `${backendCredential.platform} API`,
-      icon: backendCredential.platform === Platform.Telegram ? "📱" : "��",
+      icon: getIconForPlatform(backendCredential.platform),
     },
     accessToken: backendCredential.data.apiKey,
-    baseUrl:
+    chatId:
       backendCredential.platform === Platform.Telegram
-        ? "https://api.telegram.org"
-        : `https://api.${backendCredential.platform.toLowerCase()}.com`,
+        ? backendCredential.data.chatId
+        : undefined,
+    baseUrl: getBaseUrlForPlatform(backendCredential.platform),
   };
+};
+
+const getBaseUrlForPlatform = (platform: Platform): string => {
+  switch (platform) {
+    case Platform.Telegram:
+      return "https://api.telegram.org";
+    case Platform.ResendEmail:
+      return "https://api.resend.com";
+    case Platform.Gemini:
+      return "https://generativelanguage.googleapis.com";
+    case Platform.Groq:
+      return "https://api.groq.com";
+    default:
+      return `https://api.${platform}.com`;
+  }
 };

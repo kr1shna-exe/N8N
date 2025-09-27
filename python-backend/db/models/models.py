@@ -10,7 +10,6 @@ class Platform(str, Enum):
     RESEND_EMAIL = "ResendEmail"
     GEMINI = "Gemini"
     GROQ = "Groq"
-    TAVILY = "Tavily"
 
 
 class TriggerType(str, Enum):

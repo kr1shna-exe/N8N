@@ -104,9 +104,7 @@ const Personal = () => {
       const backendCredential = mapToBackendCredential(credentialData);
       const response =
         await credentialsApi.createCredentials(backendCredential);
-      const frontendCredential = mapFromBackendCredential(
-        response.newCredentials
-      );
+      const frontendCredential = mapFromBackendCredential(response.credentials);
       setCredentials([...credentials, frontendCredential]);
 
       toast({

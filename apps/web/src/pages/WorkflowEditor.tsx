@@ -79,7 +79,7 @@ const WorkflowEditor = () => {
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     // Only show configuration for configurable nodes
-    const configurableNodeTypes = ["telegram", "email", "form", "webhook"];
+    const configurableNodeTypes = ["telegram", "email", "form", "webhook", "agent"];
     const nodeType = node.data.nodeType as string;
 
     if (configurableNodeTypes.includes(nodeType)) {

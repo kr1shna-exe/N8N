@@ -12,7 +12,7 @@ def summary_content(url: str):
         response = requests.get(url, timeout=15)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
-        if soup.body():
+        if soup.body:
             text_content = soup.body.get_text(separator="\\n", strip=True)
         else:
             text_content = soup.get_text(separator="\\n", strip=True)

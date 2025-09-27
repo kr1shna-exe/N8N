@@ -33,7 +33,7 @@ async def execute_workflow(
             )
         nodes: Dict[str, Any] = workflow.nodes
         connections: Dict[str, Any] = workflow.connections
-        executable_node_types = {"email", "telegram", "form", "webhook"}
+        executable_node_types = {"email", "telegram", "form", "webhook", "agent"}
         total_tasks = sum(
             1
             for node in nodes.values()

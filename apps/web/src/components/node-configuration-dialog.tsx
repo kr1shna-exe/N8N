@@ -98,6 +98,10 @@ export function NodeConfigurationDialog({
         ]) as FormField[],
   });
 
+  const [agentConfig, setAgentConfig] = useState({
+    prompt: initialConfig?.template?.prompt || "",
+  });
+
   const loadCredentials = useCallback(async () => {
     if (nodeType === "webhook" || nodeType === "form") {
       setCredentials([]);
@@ -108,14 +112,20 @@ export function NodeConfigurationDialog({
       const data = await credentialsApi.getCredentials();
 
       // Filter credentials based on node type
-      const platformMap: Record<string, string> = {
+      const platformMap: Record<string, string | string[]> = {
         telegram: "Telegram",
         email: "ResendEmail",
-        form: "Form", // Form nodes don't need external credentials
+        form: "Form",
+        agent: ["Gemini", "Groq"],
       };
 
       const filteredCredentials = (data.credentials || []).filter(
-        (cred: Credential) => cred.platform === platformMap[nodeType]
+        (cred: Credential) => {
+          const expectedPlatform = platformMap[nodeType];
+          return Array.isArray(expectedPlatform)
+            ? expectedPlatform.includes(cred.platform)
+            : expectedPlatform === cred.platform;
+        }
       );
 
       setCredentials(filteredCredentials);
@@ -211,6 +221,16 @@ export function NodeConfigurationDialog({
         submitButtonText: formConfig.submitButtonText,
         fields: formConfig.fields,
       };
+    } else if (nodeType === "agent") {
+      if (!agentConfig.prompt.trim()) {
+        toast({
+          title: "Error",
+          description: "Please provide a prompt for the AI agent",
+          variant: "destructive",
+        });
+        return;
+      }
+      template = { prompt: agentConfig.prompt };
     } else if (nodeType === "webhook") {
       template = {};
     }
@@ -265,6 +285,27 @@ export function NodeConfigurationDialog({
           <div className="space-y-1 text-sm">
             <div>
               <span className="font-medium">API Key:</span>{" "}
+              <span className="font-mono text-xs">
+                {data.apiKey ? `${data.apiKey.substring(0, 10)}...` : "Not set"}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    } else if (nodeType === "agent") {
+      return (
+        <div className="mt-4 p-3 bg-muted rounded-md">
+          <h4 className="text-sm font-medium mb-2">
+            Selected Credential Details:
+          </h4>
+          <div className="space-y-1 text-sm">
+            <div>
+              <span className="font-medium">
+                {selectedCredential.platform === "GEMINI"
+                  ? "Gemini API Key"
+                  : "API Key"}
+                :
+              </span>{" "}
               <span className="font-mono text-xs">
                 {data.apiKey ? `${data.apiKey.substring(0, 10)}...` : "Not set"}
               </span>
@@ -367,6 +408,26 @@ export function NodeConfigurationDialog({
             <p className="text-xs text-muted-foreground mt-1">
               Use Mustache syntax like {"{"}name{"}"} for dynamic values. HTML
               is supported.
+            </p>
+          </div>
+        </div>
+      );
+    } else if (nodeType === "agent") {
+      return (
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="prompt">AI Agent Prompt</Label>
+            <Textarea
+              id="prompt"
+              placeholder="Enter your AI agent prompt here... You can use {{variableName}} for dynamic content. The agent can search the web and summarize content based on your prompt."
+              value={agentConfig.prompt}
+              onChange={(e) => setAgentConfig({ prompt: e.target.value })}
+              rows={6}
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Use Mustache syntax like {"{"}name{"}"} for dynamic values. The AI
+              agent can search the web and summarize content.
             </p>
           </div>
         </div>
@@ -579,6 +640,7 @@ export function NodeConfigurationDialog({
     if (nodeType === "email") return "Configure Email Node";
     if (nodeType === "form") return "Configure Form Node";
     if (nodeType === "webhook") return "Webhook Trigger";
+    if (nodeType === "agent") return "Configure AI Agent";
     return "Configure Node";
   };
 
@@ -587,6 +649,7 @@ export function NodeConfigurationDialog({
     if (nodeType === "email") return "📧";
     if (nodeType === "form") return "📝";
     if (nodeType === "webhook") return "🔗";
+    if (nodeType === "agent") return "🤖";
     return "⚙️";
   };
 
@@ -650,7 +713,9 @@ export function NodeConfigurationDialog({
                   ? "Message Configuration"
                   : nodeType === "email"
                     ? "Email Configuration"
-                    : "Form Configuration"}
+                    : nodeType === "agent"
+                      ? "AI Agent Configuration"
+                      : "Form Configuration"}
               </h3>
             )}
             {renderTemplateFields()}
