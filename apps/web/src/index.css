@@ -75,3 +75,156 @@ All colors MUST be HSL.
     font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 }
+
+/* Modern ReactFlow Animations - Award-winning UI */
+@keyframes flow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 20;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 3px hsl(var(--primary)));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px hsl(var(--primary))) drop-shadow(0 0 12px hsl(var(--primary)));
+  }
+}
+
+@keyframes connectionPulse {
+  0%, 100% {
+    stroke-width: 3;
+    opacity: 0.8;
+  }
+  50% {
+    stroke-width: 4;
+    opacity: 1;
+  }
+}
+
+/* Connection line styling - Modern flowing effect */
+.react-flow__connection-line {
+  stroke: hsl(var(--primary)) !important;
+  stroke-width: 3 !important;
+  stroke-dasharray: 10 5 !important;
+  animation: flow 1.5s linear infinite, connectionPulse 2s ease-in-out infinite !important;
+  filter: drop-shadow(0 0 6px hsl(var(--primary))) !important;
+  stroke-linecap: round !important;
+}
+
+/* Edge styling - Elegant animated flow */
+.react-flow__edge-path {
+  stroke: hsl(var(--primary)) !important;
+  stroke-width: 2.5 !important;
+  stroke-dasharray: 10 5 !important;
+  animation: flow 2.5s linear infinite !important;
+  opacity: 0.85 !important;
+  stroke-linecap: round !important;
+  transition: all 0.3s ease !important;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3.5 !important;
+  animation: flow 1.2s linear infinite, glow 2s ease-in-out infinite !important;
+  opacity: 1 !important;
+  stroke-dasharray: 12 4 !important;
+}
+
+/* Modern connection handle styling */
+.react-flow__handle {
+  width: 12px !important;
+  height: 12px !important;
+  border: 2px solid hsl(var(--primary)) !important;
+  background: hsl(var(--card)) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.react-flow__handle:hover {
+  width: 16px !important;
+  height: 16px !important;
+  border: 3px solid hsl(var(--primary)) !important;
+  background: hsl(var(--primary)) !important;
+  box-shadow: 0 0 16px hsl(var(--primary)), 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  transform: scale(1.1) !important;
+}
+
+.react-flow__handle.react-flow__handle-connecting {
+  width: 18px !important;
+  height: 18px !important;
+  background: hsl(var(--primary)) !important;
+  animation: pulse 1.5s ease-in-out infinite !important;
+  border: 3px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 20px hsl(var(--primary)) !important;
+}
+
+/* Modern node styling enhancements - Orange gradient on hover only */
+.react-flow__node {
+  transition: all 0.3s ease !important;
+  transform-origin: center center !important;
+  border-radius: 8px !important;
+}
+
+.react-flow__node:hover {
+  background: radial-gradient(ellipse at center, rgba(249, 115, 22, 0.2) 0%, rgba(251, 146, 60, 0.1) 50%, transparent 70%) !important;
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.3), 0 0 40px rgba(249, 115, 22, 0.1) !important;
+}
+
+.react-flow__node.selected {
+  z-index: 20 !important;
+}
+
+/* Edge selection and interaction */
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 4 !important;
+  animation: flow 1s linear infinite, glow 1.5s ease-in-out infinite !important;
+  stroke-dasharray: 15 3 !important;
+}
+
+/* Smooth zoom and pan */
+.react-flow__renderer {
+  transition: transform 0.3s ease !important;
+}
+
+/* Modern minimap styling */
+.react-flow__minimap {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 8px !important;
+}
+
+/* Control buttons styling */
+.react-flow__controls {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.react-flow__controls button {
+  background: transparent !important;
+  border: none !important;
+  color: hsl(var(--foreground)) !important;
+  transition: all 0.2s ease !important;
+}
+
+.react-flow__controls button:hover {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  transform: scale(1.1) !important;
+}

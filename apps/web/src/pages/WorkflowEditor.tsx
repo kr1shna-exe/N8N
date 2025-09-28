@@ -14,6 +14,9 @@ import {
   EdgeChange,
   NodeChange,
   ReactFlow,
+  Controls,
+  MiniMap,
+  Background,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { ArrowLeft, Play, Plus, Save } from "lucide-react";
@@ -73,7 +76,26 @@ const WorkflowEditor = () => {
   );
 
   const onConnect = useCallback(
-    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
+    (connection: Connection) => {
+      // Add smooth animation and modern styling to new connections
+      const newEdge = {
+        ...connection,
+        type: 'smoothstep',
+        animated: false, // We handle animation with CSS
+        style: {
+          stroke: 'hsl(var(--primary))',
+          strokeWidth: 2.5,
+          strokeDasharray: '10,5',
+        },
+        markerEnd: {
+          type: 'arrowclosed',
+          color: 'hsl(var(--primary))',
+          width: 20,
+          height: 20,
+        },
+      };
+      setEdges((eds) => addEdge(newEdge, eds));
+    },
     [setEdges],
   );
 
@@ -338,14 +360,68 @@ const WorkflowEditor = () => {
           onConnect={onConnect}
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
+          connectionMode="loose"
+          connectionLineType="smoothstep"
+          connectionLineStyle={{
+            stroke: 'hsl(var(--primary))',
+            strokeWidth: 3,
+            strokeDasharray: '10,5',
+            strokeLinecap: 'round',
+          }}
+          defaultEdgeOptions={{
+            type: 'smoothstep',
+            animated: false,
+            style: {
+              stroke: 'hsl(var(--primary))',
+              strokeWidth: 2.5,
+              strokeDasharray: '10,5',
+              strokeLinecap: 'round',
+            },
+            markerEnd: {
+              type: 'arrowclosed',
+              color: 'hsl(var(--primary))',
+              width: 20,
+              height: 20,
+            },
+          }}
+          snapToGrid={true}
+          snapGrid={[15, 15]}
           className="bg-background"
           proOptions={{ hideAttribution: true }}
-          defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
           minZoom={0.1}
           maxZoom={2}
           attributionPosition="bottom-left"
           fitView
-        ></ReactFlow>
+          fitViewOptions={{
+            padding: 0.2,
+            includeHiddenNodes: false,
+            minZoom: 0.5,
+            maxZoom: 1.2,
+          }}
+        >
+          <Background 
+            color="hsl(var(--muted-foreground))" 
+            gap={20} 
+            size={1}
+            style={{ opacity: 0.1 }}
+          />
+          <Controls 
+            position="bottom-right"
+            showZoom={true}
+            showFitView={true}
+            showInteractive={false}
+          />
+          <MiniMap 
+            nodeColor="hsl(var(--primary))"
+            maskColor="rgba(0, 0, 0, 0.1)"
+            position="bottom-left"
+            style={{
+              backgroundColor: 'hsl(var(--card))',
+              border: '1px solid hsl(var(--border))',
+            }}
+          />
+        </ReactFlow>
         {/* Node Configuration Dialog */}
         {selectedNodeForConfig && (
           <NodeConfigurationDialog

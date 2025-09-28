@@ -55,11 +55,9 @@ const CustomNode = memo(({ data }: CustomNodeProps) => {
       {/* Main Node */}
       <div
         className={`px-6 py-4 shadow-lg rounded-lg bg-gray-800 border-2 min-w-[200px] transition-colors ${
-          data.configured
-            ? "border-green-500 hover:border-green-400"
-            : data.type === "manual" || data.type === "webhook"
-              ? "border-gray-600 hover:border-orange-400"
-              : "border-orange-500 hover:border-orange-400"
+          data.type === "manual" || data.type === "webhook"
+            ? "border-gray-600 hover:border-orange-400"
+            : "border-orange-500 hover:border-orange-400"
         }`}
       >
         <Handle type="target" position={Position.Top} className="w-3 h-3" />
@@ -77,7 +75,7 @@ const CustomNode = memo(({ data }: CustomNodeProps) => {
           {/* Configuration Status Indicator */}
           {data.configured && (
             <div className="flex-shrink-0">
-              <Check className="w-5 h-5 text-green-400" />
+              <Check className="w-5 h-5 text-orange-400" />
             </div>
           )}
           {!data.configured &&
