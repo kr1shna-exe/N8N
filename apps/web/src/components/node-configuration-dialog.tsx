@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -54,7 +55,7 @@ export function NodeConfigurationDialog({
 }: NodeConfigurationProps) {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [selectedCredentialId, setSelectedCredentialId] = useState(
-    initialConfig?.credentialId || ""
+    initialConfig?.credentialId || "",
   );
   const [loadingCredentials, setLoadingCredentials] = useState(false);
 
@@ -68,6 +69,8 @@ export function NodeConfigurationDialog({
     to: initialConfig?.template?.to || "",
     subject: initialConfig?.template?.subject || "",
     body: initialConfig?.template?.body || "",
+    reply_to: initialConfig?.template?.reply_to || "",
+    waitForReply: initialConfig?.template?.waitForReply || false,
   });
 
   const webhookUrl = `${import.meta.env.VITE_BACKEND_URL}/api/webhook/${WorkflowId}`;
@@ -125,7 +128,7 @@ export function NodeConfigurationDialog({
           return Array.isArray(expectedPlatform)
             ? expectedPlatform.includes(cred.platform)
             : expectedPlatform === cred.platform;
-        }
+        },
       );
 
       setCredentials(filteredCredentials);
@@ -193,6 +196,8 @@ export function NodeConfigurationDialog({
         to: emailConfig.to,
         subject: emailConfig.subject,
         body: emailConfig.body,
+        reply_to: emailConfig.reply_to,
+        waitForReply: emailConfig.waitForReply,
       };
     } else if (nodeType === "form") {
       if (!formConfig.title.trim() || formConfig.fields.length === 0) {
@@ -382,6 +387,22 @@ export function NodeConfigurationDialog({
             />
           </div>
           <div>
+            <Label htmlFor="reply_to">Reply To Email</Label>
+            <Input
+              id="reply_to"
+              type="email"
+              placeholder="your-inbound-address@inbound.postmarkapp.com"
+              value={emailConfig.reply_to}
+              onChange={(e) =>
+                setEmailConfig((prev) => ({
+                  ...prev,
+                  reply_to: e.target.value,
+                }))
+              }
+              className="mt-1"
+            />
+          </div>
+          <div>
             <Label htmlFor="subject">Subject</Label>
             <Input
               id="subject"
@@ -409,6 +430,24 @@ export function NodeConfigurationDialog({
               Use Mustache syntax like {"{"}name{"}"} for dynamic values. HTML
               is supported.
             </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="waitForReply"
+              checked={emailConfig.waitForReply}
+              onCheckedChange={(checked) =>
+                setEmailConfig((prev) => ({
+                  ...prev,
+                  waitForReply: !!checked,
+                }))
+              }
+            />
+            <Label
+              htmlFor="waitForReply"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Wait for reply before continuing
+            </Label>
           </div>
         </div>
       );

@@ -1,8 +1,9 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from db.models.models import Platform, TriggerType
 from pydantic import BaseModel
+
+from db.models.models import Platform, TriggerType
 
 
 class UserSchema(BaseModel):
@@ -45,3 +46,36 @@ class ExecutionSchema(BaseModel):
     result: Dict[str, Any]
     workflow_id: Optional[UUID] = None
 
+
+class PostmarkHeader(BaseModel):
+    Name: str
+    Value: str
+
+
+class PostmarkAttachment(BaseModel):
+    Name: str
+    Content: str
+    ContentType: str
+    ContentLength: int
+    ContentID: str
+
+
+class PostmarkInbound(BaseModel):
+    FromName: str
+    MessageStream: str
+    From: str
+    To: str
+    Cc: Optional[str] = None
+    Bcc: Optional[str] = None
+    OriginalRecipient: str
+    Subject: str
+    MessageID: str
+    ReplyTo: Optional[str] = None
+    MailboxHash: str
+    Date: str
+    HtmlBody: Optional[str] = None
+    TextBody: Optional[str] = None
+    StrippedTextReply: Optional[str] = None
+    Tag: Optional[str] = None
+    Headers: List[PostmarkHeader]
+    Attachments: List[PostmarkAttachment]

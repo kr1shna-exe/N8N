@@ -5,10 +5,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 import asyncio
 from typing import Any
 
+from sqlmodel import Session
+
 from db.database import get_session
 from db.models.models import Execution, ExecutionStatus, Workflow
 from server.redis.index import addToQueue, getFromQueue
-from sqlmodel import Session
 from workers.nodes.runNode.runner import runNode
 
 
@@ -80,8 +81,26 @@ async def process_jobs():
                             "credentialId"
                         ],
                     }
-                    node_result = await runNode(node, job["data"].get("context", {}))
+                    context = {
+                        **job["data"].get("context", {}),
+                        "executionId": job["data"]["executionId"],
+                    }
+                    node_result = await runNode(node, context)
 
+                if (
+                    isinstance(node_result, dict)
+                    and node_result.get("status") == ExecutionStatus.PAUSED
+                ):
+                    execution = db.get(Execution, job["data"]["executionId"])
+                    if execution:
+                        execution.status = ExecutionStatus.PAUSED
+                        execution.paused_node_id = job["data"]["nodeId"]
+                        db.add(execution)
+                        db.commit()
+                        print(
+                            f"Execution {execution.id} paused at node {job['data']['nodeId']}"
+                        )
+                        continue
                 await update_execution(
                     job["data"]["executionId"],
                     job["data"]["nodeId"],

@@ -2,19 +2,20 @@ import asyncio
 from typing import Any, Dict
 
 import pystache
+import resend
+from fastapi import HTTPException
+from sqlmodel import select
+
+from db.database import get_db_session
+from db.models.models import Credentials, ExecutionStatus
 
 node_details = {
     "type": "email",
-    "name": "Email Service", 
+    "name": "Email Service",
     "description": "Send emails using Resend API",
     "category": "Communication",
-    "icon": "📧"
+    "icon": "📧",
 }
-import resend
-from db.database import get_db_session
-from db.models.models import Credentials
-from fastapi import HTTPException
-from sqlmodel import select
 
 
 async def send_Email(
@@ -32,11 +33,13 @@ async def send_Email(
     to = pystache.render(template.get("to", ""), context)
     subject = pystache.render(template.get("subject", ""), context)
     body = pystache.render(template.get("body", ""), context)
+    reply_to = pystache.render(template.get("reply_to", ""), context)
     params = {
         "from": "onboarding@resend.dev",
         "to": to,
         "subject": subject,
         "html": body,
+        "reply_to": reply_to,
     }
     try:
 
@@ -47,4 +50,7 @@ async def send_Email(
         res = await asyncio.to_thread(_send_email)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Failed to send the email: {exc}")
+    if template.get("waitForReply"):
+        print("Email sent.Workflow will be paused now for reply")
+        return {"status": ExecutionStatus.PAUSED}
     return {"to": to, "subject": subject, "body": body, "message_sent": res}
