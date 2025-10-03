@@ -5,7 +5,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from workers.nodes.runNode.runner import runNode
+from Workers.nodes.runNode.runner import runNode
 
 
 async def test_email():

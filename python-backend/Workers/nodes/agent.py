@@ -11,9 +11,9 @@ from sqlmodel import select
 
 from db.database import get_db_session, get_session
 from db.models.models import Credentials, Platform
-from workers.nodes.agents.llm import create_llm
-from workers.nodes.agents.tools.web_search import web_search
-from workers.nodes.agents.tools.web_summary import summary_content
+from Workers.nodes.agents.llm import create_llm
+from Workers.nodes.agents.tools.web_search import web_search
+from Workers.nodes.agents.tools.web_summary import summary_content
 
 node_details = {
     "type": "agent",

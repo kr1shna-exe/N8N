@@ -66,13 +66,13 @@ const WorkflowEditor = () => {
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
       setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes],
+    [setNodes]
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
       setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges],
+    [setEdges]
   );
 
   const onConnect = useCallback(
@@ -80,28 +80,34 @@ const WorkflowEditor = () => {
       // Add smooth animation and modern styling to new connections
       const newEdge = {
         ...connection,
-        type: 'smoothstep',
+        type: "smoothstep",
         animated: false, // We handle animation with CSS
         style: {
-          stroke: 'hsl(var(--primary))',
+          stroke: "hsl(var(--primary))",
           strokeWidth: 2.5,
-          strokeDasharray: '10,5',
+          strokeDasharray: "10,5",
         },
         markerEnd: {
-          type: 'arrowclosed',
-          color: 'hsl(var(--primary))',
+          type: "arrowclosed",
+          color: "hsl(var(--primary))",
           width: 20,
           height: 20,
         },
       };
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges],
+    [setEdges]
   );
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     // Only show configuration for configurable nodes
-    const configurableNodeTypes = ["telegram", "email", "form", "webhook", "agent"];
+    const configurableNodeTypes = [
+      "telegram",
+      "email",
+      "form",
+      "webhook",
+      "agent",
+    ];
     const nodeType = node.data.nodeType as string;
 
     if (configurableNodeTypes.includes(nodeType)) {
@@ -125,8 +131,8 @@ const WorkflowEditor = () => {
                   configured: true,
                 },
               }
-            : node,
-        ),
+            : node
+        )
       );
 
       toast({
@@ -136,7 +142,7 @@ const WorkflowEditor = () => {
 
       setSelectedNodeForConfig(null);
     },
-    [selectedNodeForConfig],
+    [selectedNodeForConfig]
   );
 
   const addNodeFromSelector = useCallback(
@@ -185,7 +191,7 @@ const WorkflowEditor = () => {
 
       console.log(`Added ${nodeType.name} node to workflow`);
     },
-    [nodes, setNodes],
+    [nodes, setNodes]
   );
 
   const handleExecuteWorkflow = async () => {
@@ -268,7 +274,7 @@ const WorkflowEditor = () => {
               .map(
                 (
                   [nodeId, nodeData]: [string, Record<string, unknown>],
-                  index,
+                  index
                 ) => {
                   if (!nodeData) {
                     return null;
@@ -288,7 +294,7 @@ const WorkflowEditor = () => {
                       borderRadius: "8px",
                     },
                   };
-                },
+                }
               )
               .filter(Boolean) as Node[];
             const reactFlowEdges = [];
@@ -305,7 +311,7 @@ const WorkflowEditor = () => {
               } else {
                 console.error(
                   "targets is not an array for sourceId:",
-                  sourceId,
+                  sourceId
                 );
               }
             }
@@ -363,23 +369,23 @@ const WorkflowEditor = () => {
           connectionMode="loose"
           connectionLineType="smoothstep"
           connectionLineStyle={{
-            stroke: 'hsl(var(--primary))',
+            stroke: "hsl(var(--primary))",
             strokeWidth: 3,
-            strokeDasharray: '10,5',
-            strokeLinecap: 'round',
+            strokeDasharray: "10,5",
+            strokeLinecap: "round",
           }}
           defaultEdgeOptions={{
-            type: 'smoothstep',
+            type: "smoothstep",
             animated: false,
             style: {
-              stroke: 'hsl(var(--primary))',
+              stroke: "hsl(var(--primary))",
               strokeWidth: 2.5,
-              strokeDasharray: '10,5',
-              strokeLinecap: 'round',
+              strokeDasharray: "10,5",
+              strokeLinecap: "round",
             },
             markerEnd: {
-              type: 'arrowclosed',
-              color: 'hsl(var(--primary))',
+              type: "arrowclosed",
+              color: "hsl(var(--primary))",
               width: 20,
               height: 20,
             },
@@ -400,25 +406,25 @@ const WorkflowEditor = () => {
             maxZoom: 1.2,
           }}
         >
-          <Background 
-            color="hsl(var(--muted-foreground))" 
-            gap={20} 
+          <Background
+            color="hsl(var(--muted-foreground))"
+            gap={20}
             size={1}
             style={{ opacity: 0.1 }}
           />
-          <Controls 
+          <Controls
             position="bottom-right"
             showZoom={true}
             showFitView={true}
             showInteractive={false}
           />
-          <MiniMap 
+          <MiniMap
             nodeColor="hsl(var(--primary))"
             maskColor="rgba(0, 0, 0, 0.1)"
             position="bottom-left"
             style={{
-              backgroundColor: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
+              backgroundColor: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
             }}
           />
         </ReactFlow>

@@ -10,7 +10,7 @@ from sqlmodel import Session
 from db.database import get_session
 from db.models.models import Execution, ExecutionStatus, Workflow
 from server.redis.index import addToQueue, getFromQueue
-from workers.nodes.runNode.runner import runNode
+from Workers.nodes.runNode.runner import runNode
 
 
 async def update_execution(
