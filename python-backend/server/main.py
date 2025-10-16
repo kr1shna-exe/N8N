@@ -4,17 +4,18 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from contextlib import asynccontextmanager
 
-from db.database import create_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from db.database import create_tables
 from server.routes.credentials import router as credentials_router
 from server.routes.executions import router as execution_router
 from server.routes.nodes import router as nodes_router
+from server.routes.postmark_webhook import router as postmark_router
+from server.routes.resume_workflow import router as resume_router
 from server.routes.user import router as user_router
 from server.routes.webhook import router as webhook_router
 from server.routes.workflow import router as workflow_router
-from server.routes.postmark_webhook import router as postmark_router
-from server.routes.resume_workflow import router as resume_router
 
 app = FastAPI()
 
@@ -27,7 +28,7 @@ async def lifespan(app: FastAPI):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:8080"],
     allow_credentials=True,
     allow_headers=["*"],
     allow_methods=["*"],

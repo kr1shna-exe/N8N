@@ -1,4 +1,0 @@
-name = "cloudflare-agent-worker"
-main = "Workers/nodes/agents/cld-worker.py"
-compatibility_date = "2025-09-30"
-compatibility_flags = ["python_workers"]
