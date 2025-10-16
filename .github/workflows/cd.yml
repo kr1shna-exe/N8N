@@ -1,0 +1,51 @@
+name: CD Pipeline - Azure
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to Azure Container Instances
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to Github Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to Azure Container Instances
+        uses: azure/aci-deploy@v1
+        with:
+          resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          dns-name-label: n8n-python-backend-${{ github.run_number }}
+          image: ghcr.io/${{ github.repository }}/python-backend:latest
+          name: n8n-python-backend
+          location: eastus
+          cpu: 1
+          memory: 1.5
+          ports: 8000
+          environment-variables: TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
+
+      - name: Get Container Instance Details
+        run: |
+          az container show \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --name n8n-python-backend \
+            --query "{FQDN:ipAddress.fqdn,ProvisioningState:provisioningState}" \
+            --output table

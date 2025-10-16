@@ -54,7 +54,7 @@ async def resume_workflow(
                     "nodeData": next_node_data,
                     "context": {
                         **original_context,
-                        "resume_data": data,
+                        "data": data,
                     },
                     "connections": connections.get(next_node_id, []),
                 },

@@ -1,4 +1,4 @@
-import httpx
+import httpx, os
 from fastapi import APIRouter, HTTPException
 
 from db.models.schemas import PostmarkInbound
@@ -26,7 +26,7 @@ async def postmark_inbound_webhook(payload: PostmarkInbound):
         "email_body": email_body,
     }
 
-    base_url = "http://localhost:8000"
+    base_url = os.getenv("BASE_URL", "http://local:8000")
     resume_url = f"{base_url}/api/resume/{execution_id}"
 
     async with httpx.AsyncClient() as client:

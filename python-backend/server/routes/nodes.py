@@ -9,7 +9,7 @@ router = APIRouter()
 @router.get("/nodes/types")
 async def get_node_types():
     available_nodes = []
-    nodes_dir = os.path.join(os.path.dirname(__file__), "..", "..", "workers", "nodes")
+    nodes_dir = os.path.join(os.path.dirname(__file__), "..", "..", "Workers", "nodes")
 
     for filename in os.listdir(nodes_dir):
         if filename.endswith(".py") and not filename.startswith("__"):

@@ -1,0 +1,64 @@
+# Python virtual environment
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Python build artifacts
+*.egg
+*.egg-info
+dist
+build
+*.whl
+
+# Environment and config
+.env
+.env.*
+*.local
+
+# Git
+.git
+.gitignore
+
+# IDEs and editors
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+test_*.py
+*_test.py
+tests/
+.pytest_cache
+.coverage
+htmlcov/
+
+# Database files (don't copy local DB to container)
+db/*.db
+db/*.sqlite
+db/*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Node modules (if any)
+node_modules
+
+# Documentation
+*.md
+docs/
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose.yml

@@ -55,7 +55,7 @@ export function NodeConfigurationDialog({
 }: NodeConfigurationProps) {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [selectedCredentialId, setSelectedCredentialId] = useState(
-    initialConfig?.credentialId || "",
+    initialConfig?.credentialId || ""
   );
   const [loadingCredentials, setLoadingCredentials] = useState(false);
 
@@ -128,7 +128,7 @@ export function NodeConfigurationDialog({
           return Array.isArray(expectedPlatform)
             ? expectedPlatform.includes(cred.platform)
             : expectedPlatform === cred.platform;
-        },
+        }
       );
 
       setCredentials(filteredCredentials);
@@ -145,6 +145,42 @@ export function NodeConfigurationDialog({
       setLoadingCredentials(false);
     }
   }, [nodeType]);
+
+  useEffect(() => {
+    if (open) {
+      setSelectedCredentialId(initialConfig?.credentialId || "");
+      setTelegramConfig({
+        message: initialConfig?.template?.message || "",
+      });
+      setEmailConfig({
+        to: initialConfig?.template?.to || "",
+        subject: initialConfig?.template?.subject || "",
+        body: initialConfig?.template?.body || "",
+        reply_to: initialConfig?.template?.reply_to || "",
+        waitForReply: initialConfig?.template?.waitForReply || false,
+      });
+      setFormConfig({
+        title: initialConfig?.template?.title || "Fill out this form",
+        description:
+          initialConfig?.template?.description ||
+          "Please fill out all required fields",
+        submitButtonText: initialConfig?.template?.submitButtonText || "Submit",
+        fields: (Array.isArray(initialConfig?.template?.fields)
+          ? initialConfig.template.fields
+          : [
+              {
+                name: "Name",
+                type: "text",
+                required: true,
+                placeholder: "Enter your name",
+              },
+            ]) as FormField[],
+      });
+      setAgentConfig({
+        prompt: initialConfig?.template?.prompt || "",
+      });
+    }
+  }, [open, initialConfig]);
 
   useEffect(() => {
     if (open) {
