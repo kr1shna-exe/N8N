@@ -17,14 +17,14 @@ from server.routes.user import router as user_router
 from server.routes.webhook import router as webhook_router
 from server.routes.workflow import router as workflow_router
 
-app = FastAPI()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_tables()
     yield
 
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
