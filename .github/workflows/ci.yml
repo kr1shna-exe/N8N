@@ -68,7 +68,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}/n8n-python-backend
           tags: |
-            type=sha,prefix={{brnach}}--
+            type=sha,prefix={{branch}}--
             type=sha,event=branch
             type=raw,value=latest
           flavor: |
