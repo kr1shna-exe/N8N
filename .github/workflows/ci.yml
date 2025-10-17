@@ -66,11 +66,13 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}/python-backend
+          images: ghcr.io/${{ github.repository }}/n8n-python-backend
           tags: |
             type=sha,prefix={{brnach}}--
             type=sha,event=branch
             type=raw,value=latest
+          flavor: |
+            latest=true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
