@@ -39,7 +39,7 @@ jobs:
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GHCR_PAT }}
           name: n8n-python-backend
-          location: eastus
+          location: southindia
           cpu: 1
           memory: 1.5
           ports: 8000
