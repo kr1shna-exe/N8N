@@ -16,7 +16,7 @@ type Credential = {
   userId: string;
 };
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
 export const getAuthToken = () => {
   return localStorage.getItem("authToken") || "";
@@ -67,14 +67,14 @@ export const credentialsApi = {
           authorization: `Bearer ${getAuthToken()}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     return handleResponse(response);
   },
 
   updateCredentials: async (
     credentialData: updatedCredentialSchema,
-    credentialId: string
+    credentialId: string,
   ) => {
     const validateRequest = credentialsUpdateSchema.safeParse(credentialData);
     if (!validateRequest.success) {
@@ -89,7 +89,7 @@ export const credentialsApi = {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(validateRequest.data),
-      }
+      },
     );
     return handleResponse(response);
   },
@@ -103,7 +103,7 @@ export const credentialsApi = {
           authorization: `Bearer ${getAuthToken()}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     return handleResponse(response);
   },

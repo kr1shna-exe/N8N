@@ -5,7 +5,7 @@ import {
   type signUpSchema,
 } from "../../../../packages/exports";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000/api";
 
 const handleResponse = async (res: Response) => {
   if (!res.ok) {
@@ -26,11 +26,11 @@ export const authApi = {
     const validateRequest = SignupSchema.safeParse(userData);
     if (!validateRequest.success) {
       throw new Error(
-        `Validation failed: ${validateRequest.error.issues.map((e) => e.message).join(", ")}`
+        `Validation failed: ${validateRequest.error.issues.map((e) => e.message).join(", ")}`,
       );
     }
     console.log("Ateempting from submit form");
-    const response = await fetch(`${API_URL}/user/register`, {
+    const response = await fetch(`${API_URL}/api/user/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -46,11 +46,11 @@ export const authApi = {
     const validateRequest = SigninSchema.safeParse(userData);
     if (!validateRequest.success) {
       throw new Error(
-        `Validation failed: ${validateRequest.error.issues.map((e) => e.message).join(", ")}`
+        `Validation failed: ${validateRequest.error.issues.map((e) => e.message).join(", ")}`,
       );
     }
 
-    const response = await fetch(`${API_URL}/user/signin`, {
+    const response = await fetch(`${API_URL}/api/user/signin`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -80,7 +80,7 @@ export const authApi = {
     if (!token) return null;
 
     try {
-      const response = await fetch(`${API_URL}/user/verify-token`, {
+      const response = await fetch(`${API_URL}/api/user/verify-token`, {
         method: "POST",
         headers: {
           authorization: `Bearer ${token}`,
