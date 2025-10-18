@@ -8,6 +8,10 @@ RUN apt-get update && apt-get install -y \
   git \
   curl \
   build-essential \
+  wget \
+  && wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb \
+  && dpkg -i cloudflared-linux-amd64.deb \
+  && rm cloudflared-linux-amd64.deb \
   && rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/root/.cargo/bin:$PATH"
