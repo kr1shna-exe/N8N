@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd apps/web && bun run build",
+  "buildCommand": "bun --cwd apps/web run build",
   "installCommand": "bun install --force",
   "framework": null,
   "outputDirectory": "apps/web/dist"
