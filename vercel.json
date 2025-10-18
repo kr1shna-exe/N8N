@@ -1,5 +1,5 @@
 {
-  "buildCommand": "turbo run build --filter=vite_react_shadcn_ts --force && cp -r apps/web/dist ./dist",
+  "buildCommand": "bun run build",
   "installCommand": "bun install",
   "framework": null,
   "outputDirectory": "dist",
