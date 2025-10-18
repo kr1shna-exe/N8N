@@ -46,16 +46,18 @@ export function NodeSelector({
     loadAvailableNodes();
   }, []);
 
+  const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+
   const loadAvailableNodes = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("http://localhost:8000/api/nodes/types");
+      const response = await fetch(`${API_URL}/api/nodes/types`);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(
-          `Failed to load nodes: ${response.status} ${errorText}`
+          `Failed to load nodes: ${response.status} ${errorText}`,
         );
       }
 
@@ -112,13 +114,13 @@ export function NodeSelector({
   const filteredTriggers = triggers.filter(
     (node) =>
       node.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      node.description.toLowerCase().includes(searchQuery.toLowerCase())
+      node.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const filteredNodes = regularNodes.filter(
     (node) =>
       node.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      node.description.toLowerCase().includes(searchQuery.toLowerCase())
+      node.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleNodeSelect = (nodeType: NodeType) => {

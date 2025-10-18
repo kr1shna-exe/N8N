@@ -25,12 +25,17 @@ export function NodePalette({ onAddNode, className = "" }: NodePaletteProps) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("http://localhost:8000/api/nodes/types");
+      const API_URL =
+        import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+
+      const response = await fetch(`${API_URL}/api/nodes/types`);
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to load nodes: ${response.status} ${errorText}`);
+        throw new Error(
+          `Failed to load nodes: ${response.status} ${errorText}`,
+        );
       }
-      
+
       const data = await response.json();
       setNodes(data.nodes);
       console.log("Available nodes:", data.nodes);
