@@ -18,6 +18,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { credentialsApi } from "@/lib/credentials";
+import { executionService } from "@/lib/executions";
+import { workflowService } from "@/lib/workflows";
 import { Copy } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -58,6 +60,10 @@ export function NodeConfigurationDialog({
     initialConfig?.credentialId || ""
   );
   const [loadingCredentials, setLoadingCredentials] = useState(false);
+  const [latestExecutionId, setLatestExecutionId] = useState<string | null>(null);
+  const [loadingExecution, setLoadingExecution] = useState(false);
+  const [webhookId, setWebhookId] = useState<string | null>(null);
+  const [loadingWebhook, setLoadingWebhook] = useState(false);
 
   // Telegram specific fields
   const [telegramConfig, setTelegramConfig] = useState({
@@ -72,8 +78,6 @@ export function NodeConfigurationDialog({
     reply_to: initialConfig?.template?.reply_to || "",
     waitForReply: initialConfig?.template?.waitForReply || false,
   });
-
-  const webhookUrl = `${import.meta.env.VITE_BACKEND_URL}/api/webhook/${WorkflowId}`;
 
   // Form specific fields
   interface FormField {
@@ -187,6 +191,50 @@ export function NodeConfigurationDialog({
       loadCredentials();
     }
   }, [open, loadCredentials]);
+
+  useEffect(() => {
+    if (open && nodeType === "form" && WorkflowId) {
+      setLoadingExecution(true);
+      executionService
+        .getLatestPausedExecution(WorkflowId)
+        .then((data) => {
+          if (data && data.execution) {
+            setLatestExecutionId(data.execution.id);
+          } else {
+            setLatestExecutionId(null);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching latest execution:", error);
+          setLatestExecutionId(null);
+        })
+        .finally(() => {
+          setLoadingExecution(false);
+        });
+    }
+  }, [open, nodeType, WorkflowId]);
+
+  useEffect(() => {
+    if (open && nodeType === "webhook" && WorkflowId) {
+      setLoadingWebhook(true);
+      workflowService
+        .getWorkflowById(WorkflowId)
+        .then((data) => {
+          if (data && data.webhook_id) {
+            setWebhookId(data.webhook_id);
+          } else {
+            setWebhookId(null);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching workflow webhook_id:", error);
+          setWebhookId(null);
+        })
+        .finally(() => {
+          setLoadingWebhook(false);
+        });
+    }
+  }, [open, nodeType, WorkflowId]);
 
   const handleSave = () => {
     // Form nodes don't need credentials
@@ -508,8 +556,64 @@ export function NodeConfigurationDialog({
         </div>
       );
     } else if (nodeType === "form") {
+      const formUrl = latestExecutionId
+        ? `${window.location.origin}/form/${latestExecutionId}`
+        : null;
+
       return (
         <div className="space-y-6">
+          {/* Latest Execution Form URL */}
+          {formUrl && (
+            <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div>
+                <Label htmlFor="form-url" className="text-blue-900 dark:text-blue-100">
+                  Latest Paused Form URL
+                </Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    id="form-url"
+                    value={formUrl}
+                    readOnly
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(formUrl);
+                      toast({
+                        title: "Copied to clipboard",
+                        description: "Form URL copied to clipboard",
+                      });
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                  Share this URL to allow users to fill out the paused form. This
+                  is the most recent paused execution. Each webhook trigger creates
+                  a new execution with a new form URL.
+                </p>
+              </div>
+            </div>
+          )}
+          {!formUrl && !loadingExecution && (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                No paused form execution found. Execute the workflow to generate a
+                form URL.
+              </p>
+            </div>
+          )}
+          {loadingExecution && (
+            <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Loading latest execution...
+              </p>
+            </div>
+          )}
+
           {/* Form Basic Settings */}
           <div className="space-y-4">
             <div>
@@ -680,31 +784,58 @@ export function NodeConfigurationDialog({
         </div>
       );
     } else if (nodeType === "webhook") {
+      const webhookUrl = webhookId
+        ? `${import.meta.env.VITE_BACKEND_URL}/api/webhook/${webhookId}`
+        : null;
+
       return (
         <div className="space-y-4">
-          <div>
-            <Label htmlFor="webhook-url">Webhook URL</Label>
-            <div className="flex items-center gap-2 mt-1">
-              <Input id="webhook-url" value={webhookUrl} readOnly />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  navigator.clipboard.writeText(webhookUrl);
-                  toast({
-                    title: "Copied to clipboard",
-                    description: "Webhook URL copied to clipboard",
-                  });
-                }}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
+          {loadingWebhook && (
+            <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Loading webhook URL...
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Send a POST request to this URL to trigger your workflow. The
-              request body will be available as the output of this node.
-            </p>
-          </div>
+          )}
+          {!loadingWebhook && !webhookUrl && (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                Save the workflow first to generate a webhook URL.
+              </p>
+            </div>
+          )}
+          {!loadingWebhook && webhookUrl && (
+            <div>
+              <Label htmlFor="webhook-url">Webhook URL</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input id="webhook-url" value={webhookUrl} readOnly className="font-mono text-sm" />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    navigator.clipboard.writeText(webhookUrl);
+                    toast({
+                      title: "Copied to clipboard",
+                      description: "Webhook URL copied to clipboard",
+                    });
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
+                <p className="text-xs text-blue-900 dark:text-blue-100 font-medium mb-2">
+                  How to use:
+                </p>
+                <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+                  <li>Send a POST request to this URL to trigger the workflow</li>
+                  <li>The request body will be available in the workflow context</li>
+                  <li>Response includes execution_id for tracking</li>
+                  <li>If workflow has a Form node, check Form settings for the form URL</li>
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
       );
     }

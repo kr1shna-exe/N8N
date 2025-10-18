@@ -2,18 +2,19 @@ import json
 from typing import Dict
 from uuid import UUID
 
+from fastapi import HTTPException
+from sqlmodel import Session, select
+
 from db.models.models import Execution, ExecutionStatus, Workflow
 from exports.redis import redis_client
-from fastapi import HTTPException
 from server.redis.index import addToQueue
-from sqlmodel import Session, select
 
 
 async def handle_webhook_call(
     webhook_id: UUID, db: Session, headers: Dict, body: bytes, query_params: Dict
 ):
     try:
-        statement = select(Workflow).where(Workflow.id == webhook_id)
+        statement = select(Workflow).where(Workflow.webhook_id == webhook_id)
         workflow = db.exec(statement).first()
         if not workflow:
             raise HTTPException(
@@ -28,6 +29,13 @@ async def handle_webhook_call(
                 break
         if not trigger_node_id:
             raise HTTPException(status_code=500, detail="Workflow has not webhook id")
+
+        has_form_node = any(
+            node_data.get("type") == "form"
+            or node_data.get("data", {}).get("nodeType") == "form"
+            for node_data in nodes.values()
+        )
+
         new_execution = Execution(
             workflow_id=workflow.id,
             status=ExecutionStatus.PENDING,
@@ -58,6 +66,11 @@ async def handle_webhook_call(
             },
         }
         await addToQueue(initial_job)
-        return new_execution.id
+
+        return {
+            "execution_id": str(new_execution.id),
+            "workflow_id": str(workflow.id),
+            "has_form": has_form_node,
+        }
     except Exception as e:
         print(f"Error while handling webhook call: {e}")

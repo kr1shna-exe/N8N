@@ -2,6 +2,9 @@ from os import stat
 from typing import Any, Dict
 from uuid import UUID, uuid4
 
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select
+
 from db.database import get_session
 from db.models.models import (
     Execution,
@@ -12,10 +15,8 @@ from db.models.models import (
     Workflow,
 )
 from db.models.schemas import WorkflowCreate
-from fastapi import APIRouter, Depends, HTTPException
 from server.redis.index import addToQueue
 from server.routes.user import authenticate_user
-from sqlmodel import Session, select
 
 router = APIRouter()
 
@@ -149,11 +150,15 @@ async def update_workflow(
             raise HTTPException(
                 status_code=403, detail="Not authorized to update this workflow"
             )
-        if workflow.trigger_type == TriggerType.WEBHOOK and not workflow.webhook_id:
+        if (
+            workflow_data.trigger_type == TriggerType.WEBHOOK
+            and not workflow.webhook_id
+        ):
             new_Webhook = Webhook(title="Default Webhook", id=uuid4())
             db.add(new_Webhook)
             db.commit()
             db.refresh(new_Webhook)
+            workflow.webhook_id = new_Webhook.id
         workflow.title = workflow_data.title
         workflow.nodes = {
             node_id: node.dict() for node_id, node in workflow_data.nodes.items()
@@ -166,6 +171,32 @@ async def update_workflow(
         return workflow
     except Exception as e:
         print(f"Error while updating workflow: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@router.get("/workflows/{workflow_id}/latest-execution")
+async def get_latest_paused_execution(
+    workflow_id: str, db: Session = Depends(get_session)
+):
+    try:
+        statement = (
+            select(Execution)
+            .where(Execution.workflow_id == workflow_id)
+            .where(Execution.status == ExecutionStatus.PAUSED)
+            .order_by(Execution.created_at.desc())
+        )
+        execution = db.exec(statement).first()
+        if not execution:
+            return {"execution": None, "message": "No paused execution found"}
+        return {
+            "execution": {
+                "id": str(execution.id),
+                "status": execution.status,
+                "created_at": execution.created_at.isoformat(),
+            }
+        }
+    except Exception as e:
+        print(f"Error while getting latest paused execution: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
@@ -183,8 +214,6 @@ async def delete_workflow(
             raise HTTPException(
                 status_code=403, detail="Not authorized to delete this workflow"
             )
-
-        # First, delete all executions associated with this workflow
         executions = db.exec(
             select(Execution).where(Execution.workflow_id == workflow_id)
         ).all()

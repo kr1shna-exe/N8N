@@ -316,8 +316,8 @@ const FormPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md shadow-sm border">
           <CardContent className="flex flex-col items-center justify-center py-8">
             <Loader className="w-8 h-8 animate-spin text-primary mb-4" />
             <p className="text-muted-foreground">Loading form...</p>
@@ -329,11 +329,11 @@ const FormPage = () => {
 
   if (error && !formNode) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md shadow-sm border">
           <CardContent className="flex flex-col items-center justify-center py-8">
-            <AlertCircle className="w-8 h-8 text-red-500 mb-4" />
-            <p className="text-red-500 text-center">
+            <AlertCircle className="w-8 h-8 text-destructive mb-4" />
+            <p className="text-destructive text-center">
               {error || "An error occurred"}
             </p>
           </CardContent>
@@ -383,11 +383,11 @@ const FormPage = () => {
   // Show success state
   if (formNode.submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md shadow-sm border">
           <CardContent className="flex flex-col items-center justify-center py-8">
             <CheckCircle className="w-12 h-12 text-green-500 mb-4" />
-            <h2 className="text-xl font-semibold text-center mb-2">
+            <h2 className="text-xl font-semibold text-center mb-2 text-foreground">
               Form Submitted Successfully!
             </h2>
             <p className="text-muted-foreground text-center">

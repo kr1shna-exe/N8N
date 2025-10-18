@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
@@ -84,5 +85,6 @@ class Execution(SQLModel, table=True):
     result: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
     workflow_id: UUID = Field(foreign_key="workflow.id")
     paused_node_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
     workflow: Workflow = Relationship(back_populates="execution")

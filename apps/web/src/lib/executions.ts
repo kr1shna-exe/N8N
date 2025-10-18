@@ -73,4 +73,22 @@ export const executionService = {
       console.log("Error while executing workflow: ", error);
     }
   },
+
+  async getLatestPausedExecution(workflowId: string) {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/workflows/${workflowId}/latest-execution`,
+        {
+          method: "GET",
+          headers: {
+            authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      return handleResponse(response);
+    } catch (error) {
+      console.log("Error while getting latest paused execution: ", error);
+    }
+  },
 };

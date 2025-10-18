@@ -198,8 +198,18 @@ const WorkflowEditor = () => {
     if (workflowId) {
       const context = {};
       try {
-        await executionService.executeWorkflow(workflowId, context);
-        toast({ title: "Success", description: "Workflow execution started" });
+        const response = await executionService.executeWorkflow(workflowId, context);
+        if (response && response.executionId) {
+          const formUrl = `${window.location.origin}/form/${response.executionId}`;
+          toast({
+            title: "Success",
+            description: `Workflow execution started. Execution ID: ${response.executionId}`,
+            duration: 10000,
+          });
+          console.log("Form URL:", formUrl);
+        } else {
+          toast({ title: "Success", description: "Workflow execution started" });
+        }
       } catch (error) {
         toast({ title: "Failed", description: "Workflow execution failed" });
       }
@@ -234,11 +244,16 @@ const WorkflowEditor = () => {
         backendConnections[sourceId].push(targetId);
       }
     }
+
+    // Detect trigger type based on nodes
+    const hasWebhookTrigger = nodes.some(node => node.data.nodeType === "webhook");
+    const triggerType = hasWebhookTrigger ? "Webhook" : "Manual";
+
     const workflowData = {
       title: workflowTitle,
       nodes: backendNodes,
       connections: backendConnections,
-      trigger_type: "Manual",
+      trigger_type: triggerType,
     };
     try {
       if (workflowId) {
