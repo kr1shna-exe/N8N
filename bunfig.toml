@@ -1,0 +1,3 @@
+[install]
+# Avoid hoisting to prevent dependency conflicts
+auto = "disable"
