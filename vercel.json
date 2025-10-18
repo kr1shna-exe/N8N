@@ -1,8 +1,8 @@
 {
-  "buildCommand": "rm -rf dist node_modules/.vite && bun run build",
-  "installCommand": "bun install --no-save",
+  "buildCommand": "turbo run build --filter=vite_react_shadcn_ts",
+  "installCommand": "bun install",
   "framework": null,
-  "outputDirectory": "dist",
+  "outputDirectory": "apps/web/dist",
   "rewrites": [
     {
       "source": "/(.*)",
