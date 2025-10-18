@@ -1,6 +1,6 @@
 {
   "buildCommand": "bun run build",
-  "installCommand": "bun install",
+  "installCommand": "bun install --no-save",
   "framework": null,
   "outputDirectory": "dist",
   "rewrites": [
