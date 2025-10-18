@@ -26,12 +26,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+allowed_origins = [
+    "http://localhost:8080",
+    os.getenv("FRONTEND_URL", ""),
+]
+
+cloudflare_url = os.getenv("CLOUDFLARE_TUNNEL_URL", "")
+if cloudflare_url:
+    allowed_origins.append(cloudflare_url)
+
+allowed_origins = [origin for origin in allowed_origins if origin]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8080",
-        os.getenv("FRONTEND_URL", ""),
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_headers=["*"],
     allow_methods=["*"],
