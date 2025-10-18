@@ -72,20 +72,39 @@ async def process_jobs():
                 if job_type == "webhook":
                     node_result = job["data"].get("context", {})
                 elif job_type != "manual":
+                    # Try to get config from different possible paths
+                    node_data = job["data"]["nodeData"]
+                    config = (
+                        node_data.get("data", {}).get("config", {})
+                        if isinstance(node_data.get("data"), dict)
+                        else {}
+                    )
+
                     node = {
                         "type": job_type,
-                        "template": job["data"]["nodeData"]["data"]["config"][
-                            "template"
-                        ],
-                        "credentialId": job["data"]["nodeData"]["data"]["config"][
-                            "credentialId"
-                        ],
+                        "template": config.get("template", {}),
+                        "credentialId": config.get("credentialId", ""),
                     }
                     context = {
                         **job["data"].get("context", {}),
                         "executionId": job["data"]["executionId"],
                     }
-                    node_result = await runNode(node, context)
+                    print(f"Processing {job_type} node with config: {config}")
+                    print(f"Context keys: {list(context.keys())}")
+                    try:
+                        node_result = await runNode(node, context)
+                        print(f"{job_type} node completed with result: {node_result}")
+                    except Exception as node_error:
+                        print(f"ERROR processing {job_type} node: {node_error}")
+                        import traceback
+                        traceback.print_exc()
+                        # Mark execution as failed instead of leaving it hanging
+                        execution = db.get(Execution, job["data"]["executionId"])
+                        if execution:
+                            execution.status = ExecutionStatus.FAILED
+                            db.add(execution)
+                            db.commit()
+                        continue
 
                 if (
                     isinstance(node_result, dict)
