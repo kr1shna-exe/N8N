@@ -95,9 +95,15 @@ async def resume_workflow(
             if not next_node_data:
                 continue
 
+            # Get node type from the correct location
+            node_type = (
+                next_node_data.get("type", "")
+                or next_node_data.get("data", {}).get("nodeType", "")
+            ).lower()
+
             job = {
                 "id": f"{next_node_id}-{execution.id}",
-                "type": next_node_data.get("type", "").lower(),
+                "type": node_type,
                 "data": {
                     "executionId": str(execution.id),
                     "workflowId": str(execution.workflow_id),

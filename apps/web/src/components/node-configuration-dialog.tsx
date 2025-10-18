@@ -169,7 +169,7 @@ export function NodeConfigurationDialog({
           initialConfig?.template?.description ||
           "Please fill out all required fields",
         submitButtonText: initialConfig?.template?.submitButtonText || "Submit",
-        fields: (Array.isArray(initialConfig?.template?.fields)
+        fields: (Array.isArray(initialConfig?.template?.fields) && initialConfig.template.fields.length > 0
           ? initialConfig.template.fields
           : [
               {
@@ -184,7 +184,8 @@ export function NodeConfigurationDialog({
         prompt: initialConfig?.template?.prompt || "",
       });
     }
-  }, [open, initialConfig]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -685,17 +686,15 @@ export function NodeConfigurationDialog({
                     <span className="text-sm font-medium">
                       Field {index + 1}
                     </span>
-                    {formConfig.fields.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFormField(index)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        Remove
-                      </Button>
-                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFormField(index)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      Remove
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-1 gap-3">
