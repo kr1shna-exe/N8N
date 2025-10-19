@@ -25,7 +25,6 @@
     "@langchain/core": "^0.3.76",
     "@langchain/google-genai": "^0.2.18",
     "@prisma/client": "^6.16.1",
-    "@rollup/rollup-linux-x64-gnu": "^4.28.1",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/cors": "^2.8.19",
@@ -43,6 +42,7 @@
     "node-fetch": "^3.3.2",
     "prisma": "^6.16.1",
     "redis": "^5.8.2",
-    "resend": "^6.0.3"
+    "resend": "^6.0.3",
+    "zod": "^3.23.8"
   }
 }
