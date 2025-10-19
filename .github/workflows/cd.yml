@@ -43,16 +43,7 @@ jobs:
           cpu: 1
           memory: 1.5
           ports: 8000
-          environment-variables: >
-            TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }}
-            REDIS_HOST=${{ secrets.REDIS_HOST }}
-            REDIS_PORT=${{ secrets.REDIS_PORT }}
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            BASE_URL=${{ secrets.BASE_URL }}
-            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
-            CLOUDFLARE_TOKEN=${{ secrets.CLOUDFLARE_TOKEN }}
-            CLOUDFLARE_TUNNEL_URL=${{ secrets.CLOUDFLARE_TUNNEL_URL }}
+          environment-variables: TAVILY_API_KEY=${{ secrets.TAVILY_API_KEY }} REDIS_HOST=${{ secrets.REDIS_HOST }} REDIS_PORT=${{ secrets.REDIS_PORT }} DATABASE_URL=${{ secrets.DATABASE_URL }} REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} BASE_URL=${{ secrets.BASE_URL }} FRONTEND_URL=${{ secrets.FRONTEND_URL }} CLOUDFLARE_TOKEN=${{ secrets.CLOUDFLARE_TOKEN }} CLOUDFLARE_TUNNEL_URL=${{ secrets.CLOUDFLARE_TUNNEL_URL }}
 
       - name: Get Container Instance Details
         run: |
