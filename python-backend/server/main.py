@@ -29,12 +29,10 @@ app = FastAPI(lifespan=lifespan)
 allowed_origins = [
     "http://localhost:8080",
     os.getenv("FRONTEND_URL", ""),
+    "https://n8n-backend.trycloudflare.com",  # Cloudflare tunnel URL
 ]
 
-cloudflare_url = os.getenv("CLOUDFLARE_TUNNEL_URL", "")
-if cloudflare_url:
-    allowed_origins.append(cloudflare_url)
-
+# Filter out empty strings
 allowed_origins = [origin for origin in allowed_origins if origin]
 
 app.add_middleware(
