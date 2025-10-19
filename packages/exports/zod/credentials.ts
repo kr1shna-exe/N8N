@@ -42,10 +42,18 @@ export const credentialsSchema = z.discriminatedUnion("platform", [
 ]);
 
 export const credentialsUpdateSchema = z.discriminatedUnion("platform", [
-  resendSchema.partial(),
-  telegramSchema.partial(),
-  geminiSchema.partial(),
-  groqSchema.partial(),
+  resendSchema.extend({
+    data: resendSchema.shape.data.partial(),
+  }),
+  telegramSchema.extend({
+    data: telegramSchema.shape.data.partial(),
+  }),
+  geminiSchema.extend({
+    data: geminiSchema.shape.data.partial(),
+  }),
+  groqSchema.extend({
+    data: groqSchema.shape.data.partial(),
+  }),
 ]);
 
 export type credentialsSchema = z.infer<typeof credentialsSchema>;
