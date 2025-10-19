@@ -29,7 +29,6 @@ app = FastAPI(lifespan=lifespan)
 allowed_origins = [
     "http://localhost:8080",
     "https://n8-n-web.vercel.app",
-    "https://n8n-backend.trycloudflare.com",  # Cloudflare tunnel URL
 ]
 
 app.add_middleware(
