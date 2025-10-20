@@ -74,11 +74,8 @@ const SignUp = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 mb-4">
-            <div className="text-2xl">🔄</div>
-          </div>
           <h1 className="text-2xl font-semibold text-foreground mb-2">
-            Join n8n
+            Join N8N and Start Automation
           </h1>
           <p className="text-muted-foreground">
             Create your account to get started with workflow automation

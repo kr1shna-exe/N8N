@@ -97,6 +97,7 @@ async def process_jobs():
                     except Exception as node_error:
                         print(f"ERROR processing {job_type} node: {node_error}")
                         import traceback
+
                         traceback.print_exc()
                         # Mark execution as failed instead of leaving it hanging
                         execution = db.get(Execution, job["data"]["executionId"])
@@ -139,9 +140,13 @@ async def process_jobs():
                         next_node_data = nodes.get(next_node_id)
                         if not next_node_data:
                             continue
+                        node_type = (
+                            next_node_data.get("data", {}).get("nodeType", "").lower()
+                            or next_node_data.get("type", "").lower()
+                        )
                         next_job = {
                             "id": f"{next_node_id}-{job['data']['executionId']}",
-                            "type": next_node_data.get("type", "").lower(),
+                            "type": node_type,
                             "data": {
                                 **job["data"],
                                 "nodeId": next_node_id,
@@ -151,6 +156,9 @@ async def process_jobs():
                                 "connections": connections.get(next_node_id, []),
                             },
                         }
+                        print(
+                            f"Adding {node_type} job to queue for node {next_node_id}"
+                        )
                         await addToQueue(next_job)
         except Exception as exe:
             print(f"Error occured while processing the job: {exe}")
