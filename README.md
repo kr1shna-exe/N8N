@@ -1,135 +1,165 @@
-# Turborepo starter
+# N8N Workflow Automation Platform
 
-This Turborepo starter is maintained by the Turborepo core team.
+![N8N Workflow Architecture](./apps/web/public/N8N.png)
 
-## Using this example
+A powerful, self-hosted workflow automation platform inspired by n8n. Build complex automation workflows with a visual node-based editor, connect different services, and let them work together seamlessly.
 
-Run the following command:
+## What's This About?
 
-```sh
-npx create-turbo@latest
-```
+Think of this as your personal automation tool. Whether you want to send emails when a webhook is triggered, collect form responses and notify your Telegram, or have an AI agent process data before forwarding it—you can chain these actions together visually, and the system handles the rest.
 
-## What's inside?
+## Tech Stack
 
-This Turborepo includes the following packages/apps:
+### Frontend
 
-### Apps and Packages
+- **React 18** with TypeScript
+- **Vite** for blazing fast development
+- **React Flow** for the node-based workflow editor
+- **Tailwind CSS + shadcn/ui** for modern, accessible UI components
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### Backend
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+- **Python 3.11+** with FastAPI
+- **SQLModel + Prisma** for type-safe database operations
+- **Redis** for job queue management
+- **Alembic** for database migrations
+- **PostgreSQL** as the primary database
 
-### Utilities
+## Core Features
 
-This Turborepo has some additional tools already setup for you:
+### Visual Workflow Builder
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+Drag and drop nodes onto a canvas, connect them with edges, and watch your automation come to life. Each node can be configured with its own settings, credentials, and logic.
 
-### Build
+### Multiple Trigger Types
 
-To build all apps and packages, run the following command:
+- **Manual**: Run workflows on-demand
+- **Webhook**: Trigger workflows via HTTP requests
 
-```
-cd my-turborepo
+### Available Nodes
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
+- **Webhook**: Receive HTTP requests with headers, body, and query params
+- **Form**: Pause workflow and collect user input via a public form
+- **Email**: Send emails using Resend or other providers
+- **Telegram**: Send messages to Telegram chats/channels
+- **Agent**: AI-powered nodes with tool calling (web search, summaries)
+- More nodes can be easily added!
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
+### Credential Management
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+Store API keys, tokens, and secrets securely. Each node can reference credentials without exposing sensitive data in the workflow definition.
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
+## Project Structure
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+N8N/
+├── apps/
+│   ├── web/                    # React frontend (Vite)
+│   │   ├── src/
+│   │   │   ├── components/     # UI components & workflow editor
+│   │   │   ├── pages/          # Route pages (Editor, Insights, Admin)
+│   │   │   ├── contexts/       # Auth & global state
+│   │   │   └── lib/            # API clients & utilities
+│   │   └── dist/               # Production build
+│   └── server/                 # TypeScript server (legacy/alternate)
+├── python-backend/
+│   ├── server/
+│   │   ├── routes/             # API endpoints (workflows, executions, webhooks)
+│   │   ├── controller/         # Business logic handlers
+│   │   └── redis/              # Queue operations (addToQueue, getFromQueue)
+│   ├── Workers/
+│   │   ├── index.py            # Main worker loop
+│   │   └── nodes/              # Node implementations (email, telegram, agent, etc.)
+│   └── db/
+│       ├── models/             # SQLModel schemas
+│       └── migrations/         # Alembic database migrations
+├── packages/
+│   ├── db/                     # Shared Prisma schema
+│   ├── exports/                # Shared utilities (Redis client, Zod schemas)
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+## Getting Started
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+### Prerequisites
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+- **Node.js** 18+ and npm/yarn/pnpm
+- **Python** 3.11+
+- **PostgreSQL** database
+- **Redis** server
+- **UV** (Python package manager - recommended)
 
-### Remote Caching
+### Environment Setup
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+Create `.env` files for both frontend and backend:
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+**Backend `.env`** (in `python-backend/`):
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/n8n
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=          # Optional
+JWT_SECRET=your-secret-key
+RESEND_API_KEY=          # For email node
+TELEGRAM_BOT_TOKEN=      # For Telegram node
+OPENAI_API_KEY=          # For AI agent node
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+**Frontend `.env`** (in `apps/web/`):
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+```env
+VITE_API_URL=http://localhost:8000
 ```
 
-## Useful Links
+### Installation
 
-Learn more about the power of Turborepo:
+```bash
+# Install all dependencies (monorepo)
+npm install
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+# Install Python dependencies
+cd python-backend
+uv sync
+# or: pip install -r requirements.txt
+
+# Run database migrations
+cd db
+alembic upgrade head
+```
+
+### Running the Platform
+
+You need to run three processes:
+
+**1. Backend Server**
+
+```bash
+cd python-backend
+uv run uvicorn server.main:app --reload --port 8000
+```
+
+**2. Worker Process**
+
+```bash
+cd python-backend
+uv run python Workers/index.py
+```
+
+**3. Frontend Dev Server**
+
+```bash
+cd apps/web
+npm run dev
+```
+
+### Building for Production
+
+```bash
+# Build frontend
+cd apps/web
+npm run build
+
+# For backend, use gunicorn or similar:
+cd python-backend
+uvnicorn server.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+```
