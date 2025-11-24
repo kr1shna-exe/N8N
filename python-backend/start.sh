@@ -35,31 +35,37 @@ check_database() {
   fi
 }
 
-get_worker_python_pid() {
-  pgrep -f "python.*Workers/index.py" | head -1
-}
-
 check_worker_health() {
-  local python_pid=$(get_worker_python_pid)
-  if [ -z "$python_pid" ]; then
-    log "Worker Python process not found"
+  if [ -z "$WORKER_PID" ]; then
+    log "Worker PID not set"
     return 1
   fi
 
-  if ! kill -0 "$python_pid" 2>/dev/null; then
-    log "Worker Python process $python_pid is dead"
+  if ! kill -0 "$WORKER_PID" 2>/dev/null; then
+    log "Worker process $WORKER_PID is dead"
     return 1
   fi
 
-  log "Worker Python process $python_pid is alive"
+  if [ -f /tmp/worker.log ]; then
+    local log_size=$(wc -l < /tmp/worker.log 2>/dev/null || echo 0)
+    if [ "$log_size" -gt 0 ]; then
+      log "Worker process $WORKER_PID is alive (log lines: $log_size)"
+      return 0
+    fi
+  fi
+
+  log "Worker process $WORKER_PID is alive"
   return 0
 }
 
 start_worker() {
   log "Starting worker..."
 
-  pkill -f "python.*Workers/index.py" 2>/dev/null || true
-  sleep 2
+  if [ -n "$WORKER_PID" ] && kill -0 "$WORKER_PID" 2>/dev/null; then
+    log "Stopping old worker process $WORKER_PID"
+    kill "$WORKER_PID" 2>/dev/null || true
+    sleep 2
+  fi
 
   PYTHONUNBUFFERED=1 uv run python Workers/index.py > /tmp/worker.log 2>&1 &
   WORKER_PID=$!
@@ -82,8 +88,11 @@ start_worker() {
 start_server() {
   log "Starting server..."
 
-  pkill -f "uvicorn.*server.main:app" 2>/dev/null || true
-  sleep 2
+  if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
+    log "Stopping old server process $SERVER_PID"
+    kill "$SERVER_PID" 2>/dev/null || true
+    sleep 2
+  fi
 
   PYTHONUNBUFFERED=1 uv run uvicorn server.main:app --host 0.0.0.0 --port 8000 > /tmp/server.log 2>&1 &
   SERVER_PID=$!
@@ -147,10 +156,12 @@ monitor_processes() {
 
 cleanup() {
   log "Shutting down..."
-  pkill -f "python.*Workers/index.py" 2>/dev/null || true
-  pkill -f "uvicorn.*server.main:app" 2>/dev/null || true
-  kill $WORKER_PID 2>/dev/null || true
-  kill $SERVER_PID 2>/dev/null || true
+  if [ -n "$WORKER_PID" ]; then
+    kill $WORKER_PID 2>/dev/null || true
+  fi
+  if [ -n "$SERVER_PID" ]; then
+    kill $SERVER_PID 2>/dev/null || true
+  fi
   exit 0
 }
 
