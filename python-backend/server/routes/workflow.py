@@ -23,14 +23,21 @@ router = APIRouter()
 
 @router.post("/workflows/{workflow_id}")
 async def execute_workflow(
-    workflow_id: str, context: Dict[str, Any], db: Session = Depends(get_session)
+    workflow_id: str,
+    context: Dict[str, Any],
+    db: Session = Depends(get_session),
+    user: User = Depends(authenticate_user)
 ):
     try:
         statement = select(Workflow).where(Workflow.id == workflow_id)
         workflow = db.exec(statement).first()
         if not workflow:
             raise HTTPException(
-                status_code=400, detail="No workflow found for the id provided"
+                status_code=404, detail="No workflow found for the id provided"
+            )
+        if workflow.user_id != user.id:
+            raise HTTPException(
+                status_code=403, detail="Not authorized to execute this workflow"
             )
         nodes: Dict[str, Any] = workflow.nodes
         connections: Dict[str, Any] = workflow.connections
@@ -80,9 +87,13 @@ async def execute_workflow(
 
 
 @router.get("/workflows")
-async def get_workflows(db: Session = Depends(get_session)):
+async def get_workflows(
+    db: Session = Depends(get_session),
+    user: User = Depends(authenticate_user)
+):
     try:
-        workflows = db.exec(select(Workflow)).all()
+        statement = select(Workflow).where(Workflow.user_id == user.id)
+        workflows = db.exec(statement).all()
         return workflows
     except Exception as e:
         print(f"Error getting workflows: {e}")
@@ -90,15 +101,24 @@ async def get_workflows(db: Session = Depends(get_session)):
 
 
 @router.get("/workflows/{workflow_id}")
-async def get_workflow(workflow_id: str, db: Session = Depends(get_session)):
+async def get_workflow(
+    workflow_id: str,
+    db: Session = Depends(get_session),
+    user: User = Depends(authenticate_user)
+):
     try:
         statement = select(Workflow).where(Workflow.id == workflow_id)
         workflow = db.exec(statement).first()
         if not workflow:
-            raise HTTPException(status_code=400, detail="Workflow not found")
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        if workflow.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to access this workflow")
         return workflow
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error while fetching the workflow: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
 @router.post("/workflows")
@@ -176,9 +196,19 @@ async def update_workflow(
 
 @router.get("/workflows/{workflow_id}/latest-execution")
 async def get_latest_paused_execution(
-    workflow_id: str, db: Session = Depends(get_session)
+    workflow_id: str,
+    db: Session = Depends(get_session),
+    user: User = Depends(authenticate_user)
 ):
     try:
+        workflow = db.get(Workflow, workflow_id)
+        if not workflow:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        if workflow.user_id != user.id:
+            raise HTTPException(
+                status_code=403, detail="Not authorized to access this workflow"
+            )
+
         statement = (
             select(Execution)
             .where(Execution.workflow_id == workflow_id)
@@ -195,6 +225,8 @@ async def get_latest_paused_execution(
                 "created_at": execution.created_at.isoformat(),
             }
         }
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error while getting latest paused execution: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
